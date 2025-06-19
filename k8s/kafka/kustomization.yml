@@ -1,0 +1,8 @@
+---
+kind: Kustomization
+namespace: argocd
+
+resources:
+  - namespace.yml
+  - kafka.yml
+  - topics.yml

@@ -1,0 +1,39 @@
+# .pre-commit-config.yaml
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    -   id: check-yaml
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+
+-   repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        entry: ghcr.io/hadolint/hadolint hadolint --ignore DL3008 --ignore DL3059 --ignore DL3015
+
+-   repo: local
+    hooks:
+      - id: commit-message-validator
+        name: Validate Service Commit Message
+        entry: >
+          python3 -c "import sys, re; message = open(sys.argv[1]).read().strip();
+          pattern = r'(repo-account|srvc-stats|srvc-io|srvc-store|srvc-notifier|srvc-alert|k8s)*';
+          sys.exit(0 if re.match(pattern, message) else 1)"
+        language: system
+        stages: [commit-msg]
+        verbose: true
+
+-   repo: https://github.com/softwaremill/scala-pre-commit-hooks
+    rev: v0.5.0
+    hooks:
+    -   id: sbt-fatal-warnings
+        args: [--scope=test:compile]
+    -   id: sbt-unused-imports
+        args: [--scope=test:compile]
+    -   id: sbt-scalafmt
+    -   id: sbt-scalafmt-apply
+        args: [--no-clean]
+    -   id: sbt-wartremover
+        args: [--warts=Warts.unsafe, --scope=test:compile]

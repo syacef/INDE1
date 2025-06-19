@@ -1,0 +1,36 @@
+---
+kind: Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+
+resources:
+  - namespace.yml
+  - pull-secrets.yml
+  - repo-account
+  - srvc-alert
+  - srvc-io
+  - srvc-notifier
+
+  #- https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+  #- ingress.yml  # global ingress for endpoints
+# configMapGenerator:
+#   - name: apps-config
+#     namespace: apps
+#     literals:
+#       # GENERIC
+#       - QUARKUS_LOG_LEVEL=INFO
+#       - QUARKUS_HTTP_PORT=8080
+#       - QUARKUS_HTTP_HOST=0.0.0.0
+#       - QUARKUS_APP_PROFILE=prod
+#       # REDIS
+#       - QUARKUS_REDIS_HOSTS=redis://redis-0.redis.redis.svc.cluster.local:6379,redis://redis-1.redis.redis.svc.cluster.local:6379,redis://redis-2.redis.redis.svc.cluster.local:6379
+#       - QUARKUS_REDIS_CLIENT_TYPE=cluster
+#       - QUARKUS_REDIS_RECONNECT_ATTEMPTS=3
+#       - QUARKUS_REDIS_AUTO_FAILOVER=true
+#       - USER_AGGREGATE_CHANNEL=user_aggregate
+#       - POST_AGGREGATE_CHANNEL=post_aggregate
+#       - LIKE_COMMAND_CHANNEL=like_command
+#       - BLOCK_COMMAND_CHANNEL=block_command
+#       - FOLLOW_COMMAND_CHANNEL=follow_command
+#       # MINIO
+#       - S3_ENDPOINT=http://minio-0.minio.minio.svc.cluster.local:9000
+#       - S3_BUCKET=default

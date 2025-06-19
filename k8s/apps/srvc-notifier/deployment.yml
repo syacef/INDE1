@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: srvc-notifier
+  namespace: apps
+  labels:
+    app: srvc-notifier
+    type: backends
+spec:
+  replicas: 1 # Number of replicas
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: srvc-notifier
+  template:
+    metadata:
+      labels:
+        app: srvc-notifier
+    spec:
+      imagePullSecrets:
+        - name: pull-secret
+      containers:
+        - name: srvc-notifier
+          image: registry.cri.epita.fr/mateo.lelong/inde1/srvc-notifier:v2.0.2
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /q/health/live
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /q/health/ready
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10

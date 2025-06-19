@@ -1,0 +1,12 @@
+---
+kind: Kustomization
+namespace: argocd
+
+resources:
+  - apps.yml
+  - argocd.yml
+  - kafka.yml
+  - minio.yml
+  - redis.yml
+  - spark.yml
+  - redpanda.yml

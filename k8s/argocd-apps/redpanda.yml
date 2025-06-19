@@ -1,0 +1,42 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kafka-console
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    namespace: kafka
+    name: in-cluster
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true
+  source:
+    repoURL: "https://charts.redpanda.com"
+    chart: console
+    targetRevision: "0.7.28"
+    helm:
+      values: |
+        console:
+          config:
+            kafka:
+              brokers:
+                - kafka-kafka-bootstrap.kafka.svc:9092
+        image:
+          tag: v2.7.0  # FIXME
+        resources:
+          limits:
+            memory: 500Mi
+          requests:
+            memory: 500Mi
+        ingress:
+          enabled: true
+          className: traefik
+          hosts:
+            - paths:
+                - path: /
+                  pathType: Prefix

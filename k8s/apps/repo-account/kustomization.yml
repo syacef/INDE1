@@ -1,0 +1,14 @@
+---
+kind: Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+namespace: apps
+resources:
+  - secrets.yml
+  - deployment.yml
+  - service.yml
+  - ingress.yml
+configMapGenerator:
+  - name: repo-user-config
+    namespace: apps
+    literals:
+      - REPO_USER_REDIS_HOSTS=redis://redis-0.redis.redis.svc.cluster.local:6379,redis://redis-1.redis.redis.svc.cluster.local:6379,redis://redis-2.redis.redis.svc.cluster.local:6379

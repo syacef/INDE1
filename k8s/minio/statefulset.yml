@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio
+  namespace: minio
+spec:
+  serviceName: "minio"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+        - name: minio
+          image: quay.io/minio/minio:latest
+          args:
+            - server
+            - --console-address
+            - ":36337"
+            - http://minio-0.minio.minio.svc.cluster.local/data1
+            - http://minio-1.minio.minio.svc.cluster.local/data1
+            - http://minio-2.minio.minio.svc.cluster.local/data1
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secret
+                  key: accesskey
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secret
+                  key: secretkey
+          ports:
+            - containerPort: 9000
+            - containerPort: 36337
+          volumeMounts:
+            - name: data
+              mountPath: /data1
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 40Gi

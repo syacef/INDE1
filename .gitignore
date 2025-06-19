@@ -1,0 +1,48 @@
+# Java and Build System
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+
+# targets
+target/
+project/
+.bsp/
+spotless-index
+javadoc-bundle-options/
+surefire-reports/
+build-metrics.json
+
+# Compiled classes and bytecode
+classes/
+test-classes/
+
+# Temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# IDEs and Editors
+*/.idea/
+.idea/
+.vscode/
+
+# Kubernetes
+helm/
+.kube/
+
+# Environment and Secrets
+.env
+.venv
+
+# Gitlab CI
+.gitlab-ci-local/
+
+# Vagrant
+.vagrant/
+
+# OS specific
+.DS_Store
