@@ -6,14 +6,14 @@ metadata:
 spec:
   kafka:
     version: 3.2.0
-    replicas: 3
+    replicas: 1
     resources:
       requests:
-        memory: 6Gi
-        cpu: "3"
+        memory: 1Gi
+        cpu: "0.5"
       limits:
-        memory: 6Gi
-        cpu: "3"
+        memory: 1.5Gi
+        cpu: "1"
     listeners:
       - name: plain
         port: 9092
@@ -38,7 +38,7 @@ spec:
           name: kafka-metrics
           key: kafka-metrics-config.yml
   zookeeper:
-    replicas: 3
+    replicas: 1
     resources:
       requests:
         memory: 1500Mi

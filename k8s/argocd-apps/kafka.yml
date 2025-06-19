@@ -14,7 +14,7 @@ spec:
       prune: true
   destination:
     name: in-cluster
-    namespace: kafka-operator
+    namespace: kafka
   source:
     repoURL: https://strimzi.io/charts/
     chart: strimzi-kafka-operator

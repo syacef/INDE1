@@ -9,6 +9,7 @@ metadata:
   labels:
     app: argocd
 spec:
+  project: default
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
@@ -17,8 +18,7 @@ spec:
   destination:
     name: in-cluster
     namespace: argocd
-  project: default
   source:
-    repoURL: https://gitlab.cri.epita.fr/mateo.lelong/inde1.git
+    repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
     targetRevision: HEAD
     path: k8s/argocd

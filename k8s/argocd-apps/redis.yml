@@ -14,7 +14,7 @@ spec:
     automated:
       prune: true
   destination:
-    name: redis-operator
+    name: in-cluster
     namespace: redis
   source:
     repoURL: https://spotahome.github.io/redis-operator
