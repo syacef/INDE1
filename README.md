@@ -20,7 +20,7 @@ Distributed resilient architecture handling parking events in real time.
 │   ├── srvc-io
 │   ├── srvc-notifier
 │   ├── srvc-stats
-│   ├── srvc-store
+│   └── srvc-store
 ├── tests                        # tests in production
 ├── ci                           # ci for each app
 ├── doc
@@ -33,7 +33,7 @@ Distributed resilient architecture handling parking events in real time.
 │   ├── spark                    # CRD definition for the spark operator (including scheduled jobs)
 │   ├── minio                    # deployment of minio cluster
 │   └── redis                    # CRD definition for a Redis sentinel, acting as KV store
-├── README.md
+└── README.md
 ```
 
 ## Architecture
@@ -41,10 +41,12 @@ Distributed resilient architecture handling parking events in real time.
 The project is built with a microservices architecture including the following components :
 
 - `repo-account`: User account and login management
-- `srvc-store`: Spark 
+- `srvc-store`: Spark stream to store in datalake
 - `srvc-notifier`: Notification management to handle alerts
+- `srvc-io`: IO event generator
+- `srvc-stats`: Spark scheduled batch job to compute model aggregations
 
-![Architecture Diagram](doc/infra.v1.1.png)
+![Architecture Diagram](doc/arch/infra.v1.1.png)
 
 ## Testing
 
