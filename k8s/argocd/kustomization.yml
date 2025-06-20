@@ -5,3 +5,6 @@ resources:
   - namespace.yml
   - https://raw.githubusercontent.com/argoproj/argo-cd/v2.11.5/manifests/install.yaml
   - ingress.yml
+
+patches:
+  - path: patch-argocd-ssh-cm.yml
