@@ -19,4 +19,4 @@ spec:
   source:
     repoURL: https://spotahome.github.io/redis-operator
     chart: redis-operator
-    targetRevision: 1.2.4
+    targetRevision: v1.3.0

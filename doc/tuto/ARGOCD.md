@@ -8,6 +8,15 @@ https://argo-cd.readthedocs.io/en/stable/getting_started/
 argocd admin initial-password -n argocd
 ```
 
+## Adding repo
+
+
+
+```bash
+ssh-keyscan gitlab.cri.epita.fr | 
+argocd cert add-ssh --batch
+```
+
 ## Install argocd cli
 
 ```bash
