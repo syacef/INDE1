@@ -5,6 +5,9 @@ metadata:
   name: spark-pi
   namespace: default
 spec:
+  sparkUIOptions:
+    ingressAnnotations:
+        kubernetes.io/ingress.class: traefik
   type: Scala
   mode: cluster
   image: spark:3.5.5

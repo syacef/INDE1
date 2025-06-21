@@ -7,6 +7,9 @@ metadata:
 spec:
   schedule: "@every 10m"
   concurrencyPolicy: Allow
+  sparkUIOptions:
+    ingressAnnotations:
+        kubernetes.io/ingress.class: traefik
   template:
     type: Scala
     mode: cluster
