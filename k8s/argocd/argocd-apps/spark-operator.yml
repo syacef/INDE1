@@ -25,16 +25,92 @@ spec:
     helm:
       releaseName: spark-operator
       values: |
-        watchAnyNamespace: true
+        nameOverride: "spark-operator"
+        fullnameOverride: "spark-operator"
+
         controller:
+          replicas: 2
+          logLevel: info
+          leaderElection:
+            enable: true
+          workers: 10
           uiService:
             enable: true
           uiIngress:
             enable: true
-            # Replace with your cluster's ingress URL. This value is intended for working with Kind.
-            urlFormat: /{{$appNamespace}}/{{$appName}}
             ingressClassName: traefik
-        spec:
-          sparkUIOptions:
-            ingressAnnotations:
-                kubernetes.io/ingress.class: traefik
+            annotations:
+              kubernetes.io/ingress.class: traefik
+              traefik.ingress.kubernetes.io/router.entrypoints: web
+            pathType: Prefix
+            path: /
+          serviceAccount:
+            create: true
+            automountServiceAccountToken: true
+          rbac:
+            create: true
+          podSecurityContext:
+            fsGroup: 185
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+
+        webhook:
+          enable: true
+          replicas: 1
+          leaderElection:
+            enable: true
+          logLevel: info
+          port: 9443
+          failurePolicy: Fail
+          serviceAccount:
+            create: true
+            automountServiceAccountToken: true
+          rbac:
+            create: true
+          podSecurityContext:
+            fsGroup: 185
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+
+        spark:
+          jobNamespaces:
+            - spark
+          serviceAccount:
+            create: true
+            automountServiceAccountToken: true
+          rbac:
+            create: true
+
+        prometheus:
+          metrics:
+            enable: true
+            port: 8080
+            endpoint: "/metrics"
+            jobStartLatencyBuckets: "30,60,90,120,150,180,210,240,270,300"
+          podMonitor:
+            create: true
+            labels:
+              release: prometheus-stack
+            jobLabel: spark-operator
+            podMetricsEndpoint:
+              interval: 5s
+              scheme: http
