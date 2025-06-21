@@ -2,7 +2,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
+  namespace: argocd
   name: redis-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "1" # after argocd
   labels:
     app: redis-operator
 spec:

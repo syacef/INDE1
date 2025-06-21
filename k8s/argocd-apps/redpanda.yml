@@ -4,6 +4,8 @@ kind: Application
 metadata:
   name: kafka-console
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3" # after argocd, kafka-operator, and kafka
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

@@ -4,6 +4,8 @@ kind: Application
 metadata:
   name: minio
   namespace: minio
+  annotations:
+    argocd.argoproj.io/sync-wave: "1" # after argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:

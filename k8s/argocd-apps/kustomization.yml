@@ -1,12 +1,21 @@
 ---
 kind: Kustomization
-namespace: argocd
+apiVersion: kustomize.config.k8s.io/v1beta1
 
 resources:
   - apps.yml
   - argocd.yml
-  - kafka.yml
-  - minio.yml
-  - redis.yml
-  - spark.yml
+  # Operators to create cluster
+  - kafka-operator.yml
+  - redis-operator.yml
+  - spark-operator.yml
+  # Applications
+  - apps.yml  # Applications deployed by ArgoCD
+  - redis.yml # Redis cluster
+  - kafka.yml # Kafka cluster
+  - spark.yml # Spark application
+  - minio.yml # used as blob storage
+  # Monitoring tools
   - redpanda.yml
+  #- prometheus.yml
+  #- grafana.yml

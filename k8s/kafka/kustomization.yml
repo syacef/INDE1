@@ -1,7 +1,6 @@
 ---
 kind: Kustomization
-namespace: argocd
-
+apiVersion: kustomize.config.k8s.io/v1beta1
 resources:
   - namespace.yml
   - kafka.yml

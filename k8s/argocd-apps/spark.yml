@@ -2,9 +2,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: spark-operator
+  name: spark
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2" # after argocd and spark-operator
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
   labels:
-    app: spark-operator
+    app: spark
 spec:
   project: default
   syncPolicy:
@@ -14,11 +19,8 @@ spec:
       prune: true
   destination:
     name: in-cluster
-    namespace: spark-operator
+    namespace: spark
   source:
-    repoURL: https://kubeflow.github.io/spark-operator
-    chart: spark-operator
-    targetRevision: v2.2.0
-    helm:
-      values: |
-        watchAnyNamespace: true
+    repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
+    targetRevision: HEAD
+    path: k8s/spark

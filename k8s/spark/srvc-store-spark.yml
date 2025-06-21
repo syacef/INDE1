@@ -10,7 +10,7 @@ spec:
   image: spark:3.5.5
   imagePullPolicy: IfNotPresent
   mainClass: org.apache.spark.examples.SparkPi
-  mainApplicationFile: local:///opt/spark/examples/jars/spark-examples.jar
+  mainApplicationFile: local:///opt/spark/examples/jars/spark-examples.jar # to fix
   arguments:
   - "5000"
   sparkVersion: 3.5.5

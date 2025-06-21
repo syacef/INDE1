@@ -1,0 +1,28 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spark-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "1" # after argocd
+  labels:
+    app: spark-operator
+spec:
+  project: default
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true # solve crd deployment issues
+    automated:
+      prune: true
+  destination:
+    name: in-cluster
+    namespace: spark-operator
+  source:
+    repoURL: https://kubeflow.github.io/spark-operator
+    chart: spark-operator
+    targetRevision: v2.2.0
+    helm:
+      releaseName: spark-operator
+      values: |
+        watchAnyNamespace: true
