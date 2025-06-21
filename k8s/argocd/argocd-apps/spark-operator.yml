@@ -34,3 +34,7 @@ spec:
             # Replace with your cluster's ingress URL. This value is intended for working with Kind.
             urlFormat: /{{$appNamespace}}/{{$appName}}
             ingressClassName: traefik
+        spec:
+          sparkUIOptions:
+            ingressAnnotations:
+                kubernetes.io/ingress.class: traefik
