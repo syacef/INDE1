@@ -6,4 +6,5 @@ resources:
   - spark-alerts.yml
   - spark-dashboard.yml
   - spark-monitor.yml
-
+  - kafka-alerts.yml
+  - kafka-monitor.yml

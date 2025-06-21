@@ -1,11 +1,10 @@
----
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kafka-console
+  name: redpanda
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "3" # after argocd, kafka-operator, and kafka
+    argocd.argoproj.io/sync-wave: "3"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -14,31 +13,60 @@ spec:
     namespace: kafka
     name: in-cluster
   syncPolicy:
-    automated: {}
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true
   source:
     repoURL: "https://charts.redpanda.com"
     chart: console
-    targetRevision: "0.7.28"
+    targetRevision: "0.7.29"
     helm:
       values: |
         console:
           config:
             kafka:
               brokers:
-                - kafka-kafka-bootstrap.kafka.svc:9092
+                - kafka-kafka-bootstrap.kafka.svc.cluster.local:9092
+              schemaRegistry:
+                enabled: false
+              protobuf:
+                enabled: false
+            redpanda:
+              adminApi:
+                enabled: false
+            connect:
+              enabled: false
         image:
-          tag: v2.7.0  # FIXME
+          tag: v2.7.2
         resources:
           limits:
-            memory: 500Mi
+            memory: 512Mi
+            cpu: 500m
           requests:
-            memory: 500Mi
+            memory: 256Mi
+            cpu: 100m
         ingress:
           enabled: true
           className: traefik
+          annotations:
+            traefik.ingress.kubernetes.io/router.entrypoints: web
           hosts:
             - paths:
-                - path: /
+                - path: /redpanda
                   pathType: Prefix
+        service:
+          type: ClusterIP
+          port: 8080
+        monitoring:
+          enabled: true
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65534
+          runAsGroup: 65534
+          fsGroup: 65534
+        # Pod security context
+        podSecurityContext:
+          seccompProfile:
+            type: RuntimeDefault

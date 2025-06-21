@@ -5,3 +5,4 @@ resources:
   - namespace.yml
   - kafka.yml
   - topics.yml
+  - kafka-metrics-cm.yml
