@@ -13,6 +13,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true # solve deployment issues
+      - Replace=true # solve deployment issues
     automated:
       prune: true
   destination:

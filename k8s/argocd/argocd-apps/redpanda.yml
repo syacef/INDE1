@@ -24,37 +24,40 @@ spec:
     targetRevision: "0.7.29"
     helm:
       values: |
-        console:
-          config:
-            kafka:
-              brokers:
-                - kafka-kafka-bootstrap.kafka.svc.cluster.local:9092
-            schemaRegistry:
+        # Console configuration (required)
+        config:
+          kafka:
+            brokers:
+              - kafka-kafka-bootstrap.kafka.svc.cluster.local:9092
+          schemaRegistry:
+            enabled: false
+          protobuf:
+            enabled: false
+          redpanda:
+            adminApi:
               enabled: false
-            protobuf:
-              enabled: false
-            redpanda:
-              adminApi:
-                enabled: false
-            connect:
-              enabled: false
-          image:
-            tag: v2.7.2
-          resources:
-            limits:
-              memory: 512Mi
-              cpu: 500m
-            requests:
-              memory: 256Mi
-              cpu: 100m
+          connect:
+            enabled: false
+        
+        image:
+          tag: v2.7.2
+          pullPolicy: IfNotPresent
+        
+        resources:
+          limits:
+            memory: 512Mi
+            cpu: 500m
+          requests:
+            memory: 256Mi
+            cpu: 100m
         
         ingress:
           enabled: true
-          className: traefik
           annotations:
             traefik.ingress.kubernetes.io/router.entrypoints: web
           hosts:
-            - paths:
+            - host: redpanda.local
+              paths:
                 - path: /redpanda
                   pathType: Prefix
         
@@ -62,16 +65,18 @@ spec:
           type: ClusterIP
           port: 8080
         
-        monitoring:
-          enabled: true
+        podSecurityContext:
+          runAsUser: 99     # Console chart default
+          fsGroup: 99       # Console chart default
+          fsGroupChangePolicy: Always
+          seccompProfile:
+            type: RuntimeDefault
         
         securityContext:
           runAsNonRoot: true
-          runAsUser: 65534
-          runAsGroup: 65534
-          fsGroup: 65534
         
-        # Pod security context
-        podSecurityContext:
-          seccompProfile:
-            type: RuntimeDefault
+        serviceAccount:
+          create: true
+          automountServiceAccountToken: false
+        
+        replicaCount: 1
