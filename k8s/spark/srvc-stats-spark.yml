@@ -2,10 +2,10 @@
 apiVersion: sparkoperator.k8s.io/v1beta2
 kind: ScheduledSparkApplication
 metadata:
-  name: spark-pi-scheduled
+  name: srvc-stats
   namespace: default
 spec:
-  schedule: "@every 10m"
+  schedule: "@every 2m"
   concurrencyPolicy: Allow
   sparkUIOptions:
     ingressAnnotations:
