@@ -3,13 +3,16 @@ apiVersion: sparkoperator.k8s.io/v1beta2
 kind: ScheduledSparkApplication
 metadata:
   name: srvc-stats
-  namespace: default
+  namespace: spark
 spec:
   schedule: "@every 2m"
   concurrencyPolicy: Allow
   sparkUIOptions:
     ingressAnnotations:
         kubernetes.io/ingress.class: traefik
+  sparkConf:
+    spark.ui.port: "4045"
+    spark.eventLog.enabled: "true"
   template:
     type: Scala
     mode: cluster

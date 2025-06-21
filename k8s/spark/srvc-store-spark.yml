@@ -3,11 +3,21 @@ apiVersion: sparkoperator.k8s.io/v1beta2
 kind: SparkApplication
 metadata:
   name: srvc-store
-  namespace: default
+  namespace: spark
 spec:
   sparkUIOptions:
     ingressAnnotations:
         kubernetes.io/ingress.class: traefik
+  sparkConf:
+    spark.ui.port: "4045"
+    spark.eventLog.enabled: "true"
+  restartPolicy:
+    type: OnFailure
+    onFailureRetries: 3
+    onFailureRetryInterval: 10
+    onSubmissionFailureRetries: 5
+    onSubmissionFailureRetryInterval: 20
+  timeToLiveSeconds: 3600 # time before being deleted
   type: Scala
   mode: cluster
   image: spark:3.5.5
