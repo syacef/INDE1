@@ -65,10 +65,20 @@ spec:
                   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
                     action: keep
                     regex: true
-
+        
         grafana:
           enabled: true
           adminPassword: admin123
+          # Add Grafana Ingress Configuration
+          ingress:
+            enabled: true
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: web
+              traefik.ingress.kubernetes.io/router.rule: "PathPrefix(`/grafana`)"
+            hosts:
+              - paths:
+                  - path: /grafana
+                    pathType: Prefix
           sidecar:
             dashboards:
               enabled: true
@@ -85,7 +95,7 @@ spec:
             auth.anonymous:
               enabled: true
               org_role: Viewer
-
+        
         alertmanager:
           enabled: true
           alertmanagerSpec:
@@ -98,12 +108,12 @@ spec:
                   resources:
                     requests:
                       storage: 10Gi
-
+        
         kubeStateMetrics:
           enabled: true
-
+        
         nodeExporter:
           enabled: true
-
+        
         prometheusOperator:
           enabled: true

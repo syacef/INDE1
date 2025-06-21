@@ -24,7 +24,6 @@ spec:
     targetRevision: "0.7.29"
     helm:
       values: |
-        # Console configuration (required)
         config:
           kafka:
             brokers:
@@ -55,9 +54,9 @@ spec:
           enabled: true
           annotations:
             traefik.ingress.kubernetes.io/router.entrypoints: web
+            traefik.ingress.kubernetes.io/router.rule: "PathPrefix(`/redpanda`)"
           hosts:
-            - host: redpanda.local
-              paths:
+            - paths:
                 - path: /redpanda
                   pathType: Prefix
         
