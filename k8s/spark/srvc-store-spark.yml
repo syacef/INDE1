@@ -5,12 +5,6 @@ metadata:
   name: srvc-store
   namespace: spark
 spec:
-  sparkUIOptions:
-    ingressAnnotations:
-        kubernetes.io/ingress.class: traefik
-  sparkConf:
-    spark.ui.port: "4045"
-    spark.eventLog.enabled: "true"
   restartPolicy:
     type: OnFailure
     onFailureRetries: 3

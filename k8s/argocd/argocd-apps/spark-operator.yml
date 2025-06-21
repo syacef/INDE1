@@ -26,3 +26,11 @@ spec:
       releaseName: spark-operator
       values: |
         watchAnyNamespace: true
+        controller:
+          uiService:
+            enable: true
+          uiIngress:
+            enable: true
+            # Replace with your cluster's ingress URL. This value is intended for working with Kind.
+            urlFormat: /{{$appNamespace}}/{{$appName}}
+            ingressClassName: traefik
