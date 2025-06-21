@@ -1,0 +1,26 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2" # after argocd and prometheus-operator
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app: monitoring
+spec:
+  project: default
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      prune: true
+  destination:
+    name: in-cluster
+    namespace: monitoring
+  source:
+    repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
+    targetRevision: HEAD
+    path: k8s/monitoring

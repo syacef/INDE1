@@ -20,6 +20,10 @@ spec:
     metadata:
       labels:
         app: srvc-io
+        monitoring: "enabled"
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "8080" 
     spec:
       imagePullSecrets:
         - name: pull-secret

@@ -25,9 +25,6 @@ spec:
     helm:
       releaseName: spark-operator
       values: |
-        nameOverride: "spark-operator"
-        fullnameOverride: "spark-operator"
-
         controller:
           replicas: 2
           logLevel: info

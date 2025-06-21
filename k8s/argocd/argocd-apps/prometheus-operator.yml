@@ -1,0 +1,107 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  namespace: argocd
+  name: prometheus-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app: prometheus-operator
+spec:
+  project: default
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      prune: true
+  destination:
+    name: in-cluster
+    namespace: prometheus-operator
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 75.3.5
+    helm:
+      values: |
+        prometheus:
+          prometheusSpec:
+            serviceMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            ruleSelectorNilUsesHelmValues: false
+            retention: 30d
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: fast-ssd
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 50Gi
+            additionalScrapeConfigs:
+              - job_name: 'spark-driver'
+                kubernetes_sd_configs:
+                  - role: pod
+                relabel_configs:
+                  - source_labels: [__meta_kubernetes_pod_label_spark_role]
+                    action: keep
+                    regex: driver
+                  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+                    action: keep
+                    regex: true
+                  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+                    action: replace
+                    target_label: __address__
+                    regex: (.+)
+                    replacement: ${1}:4040
+              - job_name: 'spark-executor'
+                kubernetes_sd_configs:
+                  - role: pod
+                relabel_configs:
+                  - source_labels: [__meta_kubernetes_pod_label_spark_role]
+                    action: keep
+                    regex: executor
+                  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+                    action: keep
+                    regex: true
+
+        grafana:
+          enabled: true
+          adminPassword: admin123
+          sidecar:
+            dashboards:
+              enabled: true
+              label: grafana_dashboard
+              labelValue: "1"
+              searchNamespace: ALL
+            datasources:
+              enabled: true
+              defaultDatasourceEnabled: true
+          grafana.ini:
+            server:
+              root_url: "%(protocol)s://%(domain)s/grafana/"
+              serve_from_sub_path: true
+            auth.anonymous:
+              enabled: true
+              org_role: Viewer
+
+        alertmanager:
+          enabled: true
+          alertmanagerSpec:
+            alertmanagerConfigSelectorNilUsesHelmValues: false
+            storage:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: fast-ssd
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 10Gi
+
+        kubeStateMetrics:
+          enabled: true
+
+        nodeExporter:
+          enabled: true
+
+        prometheusOperator:
+          enabled: true

@@ -1,0 +1,59 @@
+---
+# ConfigMap for Grafana dashboard - Spark Overview
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spark-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  spark-overview.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "Spark Cluster Overview",
+        "tags": ["spark", "kubernetes"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Active Spark Applications",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "count(up{job=\"spark-driver\"} == 1)",
+                "legendFormat": "Active Drivers"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Spark Executors",
+            "type": "stat", 
+            "targets": [
+              {
+                "expr": "count(up{job=\"spark-executor\"} == 1)",
+                "legendFormat": "Active Executors"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "JVM Memory Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "jvm_memory_used_bytes{area=\"heap\"}",
+                "legendFormat": "{{ instance }} - Heap Used"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+          }
+        ],
+        "time": {"from": "now-1h", "to": "now"},
+        "refresh": "30s"
+      }
+    }

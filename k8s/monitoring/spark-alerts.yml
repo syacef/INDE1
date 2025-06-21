@@ -1,0 +1,57 @@
+---
+# PrometheusRule for Spark monitoring alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: spark-alerts
+  namespace: monitoring
+  labels:
+    app: monitoring
+spec:
+  groups:
+  - name: spark.rules
+    rules:
+    - alert: SparkDriverDown
+      expr: up{job="spark-driver"} == 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Spark driver is down"
+        description: "Spark driver {{ $labels.instance }} has been down for more than 5 minutes."
+    
+    - alert: SparkExecutorDown
+      expr: up{job="spark-executor"} == 0
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Spark executor is down"
+        description: "Spark executor {{ $labels.instance }} has been down for more than 2 minutes."
+    
+    - alert: SparkJobFailed
+      expr: increase(spark_streaming_batch_processing_end_time[5m]) == 0
+      for: 10m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Spark streaming job appears to be stuck"
+        description: "No batch processing completed in the last 10 minutes for {{ $labels.instance }}"
+
+    - alert: HighJVMMemoryUsage
+      expr: (jvm_memory_used_bytes / jvm_memory_max_bytes) * 100 > 85
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High JVM memory usage"
+        description: "JVM memory usage is above 85% for {{ $labels.instance }}"
+
+    - alert: PodRestartFrequent
+      expr: increase(kube_pod_container_status_restarts_total[1h]) > 3
+      for: 0m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Pod restarting frequently"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted {{ $value }} times in the last hour."
