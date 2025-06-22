@@ -1,0 +1,20 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: srvc-store-ingress
+  namespace: spark
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /spark/srvc-store
+            pathType: Prefix
+            backend:
+              service:
+                name: srvc-store
+                port:
+                  number: 4040

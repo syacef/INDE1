@@ -22,14 +22,12 @@ spec:
     restartPolicy:
       type: Never
     sparkConf:
-      "spark.eventLog.enabled": "true"
-      "spark.eventLog.dir": "file:///tmp/spark-events"
-      "spark.history.fs.logDirectory": "file:///tmp/spark-events"
-      "spark.eventLog.compress": "true"
-      "spark.eventLog.rolling.enabled": "true"
-      "spark.eventLog.rolling.maxFileSize": "128m"
-      "spark.kubernetes.driver.deleteOnTermination": "true"
+      "spark.ui.proxyBase": "/spark/srvc-stats"
+      "spark.executor.instances": "1"
       "spark.kubernetes.executor.deleteOnTermination": "true"
+      "spark.kubernetes.driver.deleteOnTermination": "true"
+      "spark.executor.heartbeatInterval": "10s"
+      "spark.network.timeout": "120s"
     driver:
       cores: 1
       memory: "512m"
@@ -44,7 +42,3 @@ spec:
       labels:
         app: srvc-stats
         component: executor
-    volumes:
-      - name: spark-events
-        persistentVolumeClaim:
-          claimName: spark-events-pvc
