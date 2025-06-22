@@ -5,7 +5,9 @@ metadata:
   namespace: spark
 spec:
   schedule: "@every 2m"
-  concurrencyPolicy: Allow
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
   template:
     type: Scala
     mode: cluster
@@ -14,18 +16,22 @@ spec:
     imagePullPolicy: IfNotPresent
     mainClass: org.apache.spark.examples.SparkPi
     mainApplicationFile: local:///opt/spark/examples/jars/spark-examples.jar
-
     restartPolicy:
       type: Never
-
-    sparkUIOptions:
-      ingressAnnotations:
-        kubernetes.io/ingress.class: traefik
-
+    sparkConf:
+      "spark.eventLog.enabled": "true"
+      "spark.eventLog.dir": "file:///tmp/spark-events"
+      "spark.history.fs.logDirectory": "file:///tmp/spark-events"
+      "spark.eventLog.compress": "true"
+      "spark.eventLog.rolling.enabled": "true"
+      "spark.eventLog.rolling.maxFileSize": "128m"
     driver:
       cores: 1
       memory: 512m
       serviceAccount: spark-operator-spark
+      volumeMounts:
+        - name: spark-events
+          mountPath: /tmp/spark-events
       securityContext:
         runAsUser: 185
         runAsGroup: 185
@@ -36,11 +42,13 @@ spec:
             - ALL
         seccompProfile:
           type: RuntimeDefault
-
     executor:
       instances: 1
       cores: 1
       memory: 512m
+      volumeMounts:
+        - name: spark-events
+          mountPath: /tmp/spark-events
       securityContext:
         runAsUser: 185
         runAsGroup: 185
@@ -51,3 +59,7 @@ spec:
             - ALL
         seccompProfile:
           type: RuntimeDefault
+    volumes:
+      - name: spark-events
+        persistentVolumeClaim:
+          claimName: spark-events-pvc
