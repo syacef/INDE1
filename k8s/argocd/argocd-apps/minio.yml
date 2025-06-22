@@ -20,7 +20,7 @@ spec:
       selfHeal: true
   destination:
     name: in-cluster
-    namespace: argocd
+    namespace: minio
   source:
     repoURL: https://charts.min.io/
     chart: minio
@@ -63,3 +63,15 @@ spec:
         defaultBuckets: "datalake,json-data"
 
         mode: distributed
+
+        ingress:
+          enabled: true
+          ingressClassName: "traefik"
+          path: /minio
+          hosts:
+            - ""
+          annotations:
+            nginx.ingress.kubernetes.io/rewrite-target: /
+            nginx.ingress.kubernetes.io/proxy-body-size: "0"
+            nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+            nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
