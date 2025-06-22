@@ -16,7 +16,7 @@ spec:
     image: "spark:3.5.5"
     imagePullPolicy: IfNotPresent
     mainClass: org.apache.spark.examples.SparkPi
-    mainApplicationFile: "local:///opt/spark/examples/jars/spark-examples.jar"
+    mainApplicationFile: "local:///opt/spark/examples/jars/spark-examples.jar" # use https://gitlab.cri.epita.fr/mateo.lelong/inde1/-/projects/:id/packages/ # then get .jar
     arguments:
       - "100"
     restartPolicy:
