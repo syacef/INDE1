@@ -21,44 +21,44 @@ spec:
         fsGroup: 185
         runAsNonRoot: true
       containers:
-      - name: spark-history-server
-        image: spark:3.5.5
-        command:
-        - /opt/spark/bin/spark-class
-        - org.apache.spark.deploy.history.HistoryServer
-        env:
-        - name: SPARK_CONF_DIR
-          value: /opt/spark/conf
-        - name: SPARK_HISTORY_OPTS
-          value: "-Dspark.history.fs.logDirectory=file:///tmp/spark-events -Dspark.history.ui.port=18080"
-        ports:
-        - containerPort: 18080
-          name: http
-        volumeMounts:
-        - name: spark-events
-          mountPath: /tmp/spark-events
-        - name: spark-conf
-          mountPath: /opt/spark/conf
-        securityContext:
-          runAsUser: 185
-          runAsGroup: 185
-          runAsNonRoot: true
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          seccompProfile:
-            type: RuntimeDefault
-        resources:
-          requests:
-            memory: 512Mi
-            cpu: 500m
-          limits:
-            memory: 1Gi
-            cpu: 1000m
+        - name: spark-history-server
+          image: spark:3.5.5
+          command:
+            - /opt/spark/bin/spark-class
+            - org.apache.spark.deploy.history.HistoryServer
+          env:
+            - name: SPARK_CONF_DIR
+              value: /opt/spark/conf
+            # Remove SPARK_HISTORY_OPTS since we're using the config file
+          ports:
+            - containerPort: 18080
+              name: http
+          volumeMounts:
+            - name: spark-events
+              mountPath: /tmp/spark-events
+            - name: spark-conf
+              mountPath: /opt/spark/conf
+          securityContext:
+            runAsUser: 185
+            runAsGroup: 185
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 500m
+            limits:
+              memory: 1Gi
+              cpu: 1000m
       volumes:
-      - name: spark-events
-        emptyDir: {}
-      - name: spark-conf
-        configMap:
-          name: spark-history-config
+        - name: spark-events
+          persistentVolumeClaim:
+            claimName: spark-events-pvc
+        - name: spark-conf
+          configMap:
+            name: spark-history-config
