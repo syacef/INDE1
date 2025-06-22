@@ -10,11 +10,11 @@ spec:
     replicas: 1
     resources:
       requests:
-        memory: 512Mi  # Reduced from 1Gi
-        cpu: "0.25"    # Reduced from 0.5
+        memory: 512Mi
+        cpu: "0.25"
       limits:
-        memory: 1Gi    # Reduced from 1.5Gi
-        cpu: "0.5"     # Reduced from 1
+        memory: 1Gi
+        cpu: "0.5"
     listeners:
       - name: plain
         port: 9092
@@ -59,13 +59,6 @@ spec:
           name: kafka-metrics
           key: kafka-metrics-config.yml
 
-    jvmOptions:
-      -Xms256m
-      -Xmx512m
-      -XX:+UseG1GC
-      -XX:MaxGCPauseMillis=20
-      -XX:InitiatingHeapOccupancyPercent=35
-      
   zookeeper:
     replicas: 1
     resources:
@@ -85,10 +78,6 @@ spec:
         configMapKeyRef:
           name: kafka-metrics
           key: zookeeper-metrics-config.yml
-    
-    jvmOptions:
-      -Xms128m
-      -Xmx256m
       
   entityOperator:
     topicOperator:
