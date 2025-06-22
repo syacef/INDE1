@@ -1,10 +1,9 @@
-include:
-  - "ci/common.gitlab-ci.yml"
-  - "ci/repo-account.gitlab-ci.yml"
-  - "ci/srvc-alert.gitlab-ci.yml"
-  - "ci/srvc-stats.gitlab-ci.yml"
-  - "ci/srvc-notifier.gitlab-ci.yml"
-  - "ci/srvc-io.gitlab-ci.yml"
+include: []
+#  - "ci/repo-account.yml"
+#  - "ci/srvc-alert.yml"
+#  - "ci/srvc-stats.yml"
+#  - "ci/srvc-notifier.yml"
+#  - "ci/srvc-io.yml"
 
 verify-commit-message:
   image: alpine:3.18

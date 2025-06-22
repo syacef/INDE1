@@ -6,4 +6,4 @@ resources:
   - srvc-stats-spark.yml
   - srvc-store-spark.yml
   - spark-events-pvc.yml
-  - spark-history
+#  - spark-history
