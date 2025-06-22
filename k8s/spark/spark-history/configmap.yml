@@ -1,5 +1,4 @@
 ---
-# ConfigMap for Spark History Server configuration
 apiVersion: v1
 kind: ConfigMap
 metadata:
