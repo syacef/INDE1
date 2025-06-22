@@ -10,3 +10,4 @@ data:
     spark.history.ui.port=18080
     spark.history.retainedApplications=50
     spark.history.ui.maxApplications=50
+    spark.ui.proxyBase=/spark
