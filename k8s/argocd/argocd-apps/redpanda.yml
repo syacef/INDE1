@@ -21,26 +21,17 @@ spec:
   source:
     repoURL: "https://charts.redpanda.com"
     chart: console
-    targetRevision: "0.7.29"
+    targetRevision: "v3.1.0"
     helm: # https://docs.redpanda.com/current/reference/k-console-helm-spec
       values: |
         autoscaling:
           enabled: true
           minReplicas: 1
           maxReplicas: 3
-        console:
-          config: # https://docs.redpanda.com/current/console/config/configure-console/
-            kafka:
-              brokers: ["kafka-kafka-bootstrap.kafka.svc.cluster.local:9092"]
-            schemaRegistry:
-              enabled: false
-            protobuf:
-              enabled: false
-            redpanda:
-              adminApi:
-                enabled: false
-            connect:
-              enabled: false
+
+        config: # https://docs.redpanda.com/current/console/config/configure-console/
+          kafka:
+            brokers: ["kafka-kafka-bootstrap.kafka.svc:9092"]
 
         resources:
           limits:
@@ -49,7 +40,7 @@ spec:
           requests:
             memory: 256Mi
             cpu: 100m
-        
+
         ingress:
           enabled: true
           annotations:
