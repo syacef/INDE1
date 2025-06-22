@@ -3,7 +3,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: minio
-  namespace: minio
+  namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1" # after argocd
   finalizers:
@@ -17,10 +17,49 @@ spec:
       - CreateNamespace=true
     automated:
       prune: true
+      selfHeal: true
   destination:
-    name: in-cluster
+    server: in-cluster
     namespace: minio
   source:
-    repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
-    targetRevision: HEAD
-    path: k8s/minio
+    repoURL: https://charts.min.io/
+    chart: minio
+    targetRevision: 5.4.0
+    helm:
+      releaseName: minio
+      values: |
+        auth:
+          rootUser: admin
+          rootPassword: minio123456
+
+        persistence:
+          enabled: true
+          size: 20Gi
+          storageClass: local-path
+
+        service:
+          type: ClusterIP
+          ports:
+            api: 9000
+            console: 9001
+
+        consoleService:
+          type: ClusterIP
+
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+          limits:
+            memory: 1Gi
+            cpu: 500m
+
+        securityContext:
+          enabled: true
+          runAsUser: 1001
+          runAsGroup: 1001
+          fsGroup: 1001
+
+        defaultBuckets: "datalake,json-data"
+
+        mode: distributed
