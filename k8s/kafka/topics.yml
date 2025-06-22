@@ -1,22 +1,18 @@
+---
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaTopic
 metadata:
   name: alert-event-topic
   namespace: kafka
   labels:
-    strimzi.io/cluster:
+    strimzi.io/cluster: kafka
 spec:
   partitions: 1
   replicas: 1
   config:
     retention.ms: 60000 # 1 min
     segment.bytes: 1073741824
-status:
-  conditions:
-    lastTransitionTime: "2019-08-20T11:37:00.706Z"
-    status: "True"
-    type: Ready
-  observedGeneration: 1
+
 ---
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaTopic
@@ -24,16 +20,10 @@ metadata:
   name: parking-event-topic
   namespace: kafka
   labels:
-    strimzi.io/cluster:
+    strimzi.io/cluster: kafka
 spec:
   partitions: 1
   replicas: 1
   config:
     retention.ms: 60000 # 1 min
     segment.bytes: 1073741824
-status:
-  conditions:
-    lastTransitionTime: "2019-08-20T11:37:00.706Z"
-    status: "True"
-    type: Ready
-  observedGeneration: 1
