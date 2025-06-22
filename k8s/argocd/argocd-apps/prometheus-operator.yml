@@ -26,6 +26,7 @@ spec:
     targetRevision: 75.3.5
     helm:
       values: |
+        fullnameOverride: "prometheus"
         prometheus:
           prometheusSpec:
             serviceMonitorSelectorNilUsesHelmValues: false
@@ -101,7 +102,7 @@ spec:
             storage:
               volumeClaimTemplate:
                 spec:
-                  storageClassName: fast-ssd
+                  storageClassName: local-path
                   accessModes: ["ReadWriteOnce"]
                   resources:
                     requests:
