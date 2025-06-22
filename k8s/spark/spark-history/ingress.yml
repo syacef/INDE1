@@ -1,3 +1,16 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: spark-headers
+  namespace: spark
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Prefix: "/spark"
+    customResponseHeaders:
+      Content-Type: ""
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -6,25 +19,15 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
     traefik.ingress.kubernetes.io/router.entrypoints: web
-    traefik.ingress.kubernetes.io/router.middlewares: spark-stripprefix@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: spark-spark-headers@kubernetescrd
 spec:
   rules:
-  - http:
-      paths:
-      - path: /spark
-        pathType: Prefix
-        backend:
-          service:
-            name: spark-history-server
-            port:
-              number: 18080
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: stripprefix
-  namespace: spark
-spec:
-  stripPrefix:
-    prefixes:
-    - /spark
+    - http:
+        paths:
+          - path: /spark
+            pathType: Prefix
+            backend:
+              service:
+                name: spark-history-server
+                port:
+                  number: 18080
