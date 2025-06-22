@@ -37,6 +37,9 @@ spec:
           size: 20Gi
           storageClass: local-path
 
+        replicas: 4
+        drivesPerNode: 1
+
         service:
           type: ClusterIP
           ports:
