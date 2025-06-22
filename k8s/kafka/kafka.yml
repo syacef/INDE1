@@ -78,7 +78,7 @@ spec:
         configMapKeyRef:
           name: kafka-metrics
           key: zookeeper-metrics-config.yml
-      
+
   entityOperator:
     topicOperator:
       resources:

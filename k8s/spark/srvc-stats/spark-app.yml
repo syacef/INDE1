@@ -1,44 +1,44 @@
 ---
 apiVersion: sparkoperator.k8s.io/v1beta2
-kind: ScheduledSparkApplication
+kind: SparkApplication
 metadata:
   name: srvc-stats
   namespace: spark
 spec:
-  schedule: "@every 2m"
-  concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 1
-  failedJobsHistoryLimit: 1
-  template:
-    type: Scala
-    mode: cluster
-    sparkVersion: "3.5.5"
-    image: "spark:3.5.5"
-    imagePullPolicy: IfNotPresent
-    mainClass: org.apache.spark.examples.SparkPi
-    mainApplicationFile: "local:///opt/spark/examples/jars/spark-examples.jar" # use https://gitlab.cri.epita.fr/mateo.lelong/inde1/-/projects/:id/packages/ # then get .jar
-    arguments:
-      - "100"
-    restartPolicy:
-      type: Never
-    sparkConf:
-      "spark.ui.proxyBase": "/spark/srvc-stats"
-      "spark.executor.instances": "1"
-      "spark.kubernetes.executor.deleteOnTermination": "true"
-      "spark.kubernetes.driver.deleteOnTermination": "true"
-      "spark.executor.heartbeatInterval": "10s"
-      "spark.network.timeout": "120s"
-    driver:
-      cores: 1
-      memory: "512m"
-      serviceAccount: spark-operator-spark
-      labels:
-        app: srvc-stats
-        component: driver
-    executor:
-      instances: 1
-      cores: 1
-      memory: "512m"
-      labels:
-        app: srvc-stats
-        component: executor
+  type: Scala
+  mode: cluster
+  sparkVersion: "3.5.5"
+  image: "spark:3.5.5"
+  imagePullPolicy: IfNotPresent
+  mainClass: org.apache.spark.examples.SparkPi
+  mainApplicationFile: "local:///opt/spark/examples/jars/spark-examples.jar"
+  arguments:
+    - "10000"
+  restartPolicy:
+    type: OnFailure
+    onFailureRetries: 2
+    onFailureRetryInterval: 10
+    onSubmissionFailureRetries: 3
+    onSubmissionFailureRetryInterval: 20
+  timeToLiveSeconds: 1800
+  sparkConf:
+    "spark.ui.proxyBase": "/spark/srvc-stats"
+    "spark.executor.instances": "1"
+    "spark.kubernetes.executor.deleteOnTermination": "true"
+    "spark.kubernetes.driver.deleteOnTermination": "true"
+    "spark.executor.heartbeatInterval": "10s"
+    "spark.network.timeout": "120s"
+  driver:
+    cores: 1
+    memory: "512m"
+    serviceAccount: spark-operator-spark
+    labels:
+      app: srvc-stats
+      component: driver
+  executor:
+    instances: 1
+    cores: 1
+    memory: "512m"
+    labels:
+      app: srvc-stats
+      component: executor
