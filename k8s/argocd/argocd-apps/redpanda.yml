@@ -22,9 +22,13 @@ spec:
     repoURL: "https://charts.redpanda.com"
     chart: console
     targetRevision: "0.7.29"
-    helm:
+    helm: # https://docs.redpanda.com/current/reference/k-console-helm-spec
       values: |
-        config:
+        autoscaling:
+          enabled: true
+          minReplicas: 1
+          maxReplicas: 3
+        config: # https://docs.redpanda.com/current/console/config/configure-console/
           kafka:
             brokers:
               - kafka-kafka-bootstrap.kafka.svc.cluster.local:9092
@@ -37,10 +41,6 @@ spec:
               enabled: false
           connect:
             enabled: false
-        
-        image:
-          tag: v2.7.2
-          pullPolicy: IfNotPresent
         
         resources:
           limits:
@@ -56,26 +56,9 @@ spec:
             traefik.ingress.kubernetes.io/router.entrypoints: web
             traefik.ingress.kubernetes.io/router.rule: "PathPrefix(`/redpanda`)"
           hosts:
-            - paths:
+            - host: ""
+              paths:
                 - path: /redpanda
                   pathType: Prefix
-        
-        service:
-          type: ClusterIP
-          port: 8080
-        
-        podSecurityContext:
-          runAsUser: 99     # Console chart default
-          fsGroup: 99       # Console chart default
-          fsGroupChangePolicy: Always
-          seccompProfile:
-            type: RuntimeDefault
-        
-        securityContext:
-          runAsNonRoot: true
-        
-        serviceAccount:
-          create: true
-          automountServiceAccountToken: false
-        
+
         replicaCount: 1
