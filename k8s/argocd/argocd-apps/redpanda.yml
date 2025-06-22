@@ -28,19 +28,20 @@ spec:
           enabled: true
           minReplicas: 1
           maxReplicas: 3
-        config: # https://docs.redpanda.com/current/console/config/configure-console/
-          kafka:
-            brokers: ["kafka-kafka-brokers.kafka.svc.cluster.local:9092"]
-          schemaRegistry:
-            enabled: false
-          protobuf:
-            enabled: false
-          redpanda:
-            adminApi:
+        console:
+          config: # https://docs.redpanda.com/current/console/config/configure-console/
+            kafka:
+              brokers: ["kafka-kafka-bootstrap.kafka.svc.cluster.local:9092"]
+            schemaRegistry:
               enabled: false
-          connect:
-            enabled: false
-        
+            protobuf:
+              enabled: false
+            redpanda:
+              adminApi:
+                enabled: false
+            connect:
+              enabled: false
+
         resources:
           limits:
             memory: 512Mi
