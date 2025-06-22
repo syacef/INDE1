@@ -30,7 +30,7 @@ spec:
           maxReplicas: 3
         config: # https://docs.redpanda.com/current/console/config/configure-console/
           kafka:
-            brokers: "kafka-kafka-bootstrap.kafka.svc.cluster.local:9092"
+            brokers: ["kafka-kafka-brokers.kafka.svc.cluster.local:9092"]
           schemaRegistry:
             enabled: false
           protobuf:
