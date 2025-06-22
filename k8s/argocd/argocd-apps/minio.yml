@@ -19,8 +19,8 @@ spec:
       prune: true
       selfHeal: true
   destination:
-    server: in-cluster
-    namespace: minio
+    name: in-cluster
+    namespace: argocd
   source:
     repoURL: https://charts.min.io/
     chart: minio

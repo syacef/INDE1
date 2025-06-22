@@ -15,9 +15,10 @@ spec:
       - ServerSideApply=true # solve crd deployment issues
     automated:
       prune: true
+      selfHeal: true
   destination:
     name: in-cluster
-    namespace: spark-operator
+    namespace: spark
   source:
     repoURL: https://kubeflow.github.io/spark-operator
     chart: spark-operator

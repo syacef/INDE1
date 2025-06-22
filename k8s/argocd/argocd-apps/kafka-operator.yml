@@ -17,6 +17,7 @@ spec:
       - CreateNamespace=true
     automated:
       prune: true
+      selfHeal: true
   destination:
     name: in-cluster
     namespace: kafka

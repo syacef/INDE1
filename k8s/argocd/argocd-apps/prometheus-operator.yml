@@ -16,6 +16,7 @@ spec:
       - Replace=true # solve deployment issues
     automated:
       prune: true
+      selfHeal: true
   destination:
     name: in-cluster
     namespace: prometheus-operator
