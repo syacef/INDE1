@@ -30,7 +30,7 @@ spec:
         - name: SPARK_CONF_DIR
           value: /opt/spark/conf
         - name: SPARK_HISTORY_OPTS
-          value: "-Dspark.history.fs.logDirectory=file:///tmp/spark-events -Dspark.history.ui.port=18080"
+          value: "-Dspark.history.fs.logDirectory=file:///tmp/spark-events -Dspark.history.ui.port=18080 -Dspark.ui.proxyBase=/spark"
         ports:
         - containerPort: 18080
           name: http
