@@ -66,22 +66,15 @@ spec:
                   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
                     action: keep
                     regex: true
-        
+
         grafana:
           enabled: true
           adminPassword: admin123
-          # Add Grafana Ingress Configuration
           ingress:
             enabled: true
-            ingressClassName: ""
-            annotations:
-              nginx.ingress.kubernetes.io/rewrite-target: /
-              nginx.ingress.kubernetes.io/proxy-body-size: "0"
-            hosts:
-              - host: ""
-                paths:
-                  - path: /grafana
-                    pathType: Prefix
+            ingressClassName: "traefik"
+            path: /grafana
+            pathType: Prefix
             tls: []
 
           sidecar:
