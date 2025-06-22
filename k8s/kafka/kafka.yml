@@ -77,8 +77,8 @@ spec:
         cpu: 300m
     storage:
       type: persistent-claim
-      size: 2Gi  # Reduced from 50Gi
-      
+      size: 2Gi
+
     metricsConfig:
       type: jmxPrometheusExporter
       valueFrom:
