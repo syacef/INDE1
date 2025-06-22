@@ -26,6 +26,7 @@ spec:
           command:
             - /opt/spark/bin/spark-class
             - org.apache.spark.deploy.history.HistoryServer
+            - -Dspark.ui.proxyBase=/spark
           env:
             - name: SPARK_CONF_DIR
               value: /opt/spark/conf
