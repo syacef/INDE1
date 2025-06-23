@@ -65,6 +65,9 @@ spec:
 
         mode: distributed
 
+        ingress:
+          enabled: false
+
         consoleIngress:
           enabled: true
           ingressClassName: "traefik"
