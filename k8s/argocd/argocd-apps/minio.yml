@@ -5,7 +5,7 @@ metadata:
   name: minio
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "1" # after argocd
+    argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
@@ -21,60 +21,56 @@ spec:
   destination:
     name: in-cluster
     namespace: minio
-  source:
-    repoURL: https://charts.min.io/
-    chart: minio
-    targetRevision: 5.4.0
-    helm:
-      releaseName: minio
-      values: |
-        auth:
-          rootUser: admin
-          rootPassword: minio123456
-        persistence:
-          enabled: true
-          size: 20Gi
-          storageClass: local-path
-        replicas: 4
-        drivesPerNode: 1
+  sources:
+    # MinIO Helm Chart
+    - repoURL: https://charts.min.io/
+      chart: minio
+      targetRevision: 5.4.0
+      helm:
+        releaseName: minio
+        values: |
+          auth:
+            rootUser: admin
+            rootPassword: minio123456
 
-        minioAPIPort: 9000
-        minioConsolePort: 9001
+          persistence:
+            enabled: true
+            size: 20Gi
+            storageClass: local-path
 
-        environment:
-          MINIO_BROWSER_REDIRECT_URL: "/minio"
-          # MINIO_PROMETHEUS_URL
+          replicas: 4
+          drivesPerNode: 1
 
-        service:
-          type: ClusterIP
-          port: 9000
-        consoleService:
-          type: ClusterIP
-          port: 9001
+          minioAPIPort: 9000
+          minioConsolePort: 9001
+          service:
+            type: ClusterIP
+            port: 9000
+          consoleService:
+            type: ClusterIP
+            port: 9001
 
-        resources:
-          requests:
-            memory: 256Mi
-            cpu: 100m
-          limits:
-            memory: 1Gi
-            cpu: 500m
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 1Gi
+              cpu: 500m
 
-        securityContext:
-          enabled: true
-          runAsUser: 1001
-          runAsGroup: 1001
-          fsGroup: 1001
-        defaultBuckets: "datalake,json-data"
+          securityContext:
+            enabled: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            fsGroup: 1001
 
-        mode: distributed
+          defaultBuckets: "datalake,json-data"
+          mode: distributed
 
-        ingress:
-          enabled: false
-
-        consoleIngress:
-          enabled: true
-          ingressClassName: "traefik"
-          path: /minio
-          hosts:
-            - ""
+          ingress:
+            enabled: false
+          consoleIngress:
+            enabled: false
+    - repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
+      path: k8s/minio
+      targetRevision: HEAD
