@@ -31,23 +31,22 @@ spec:
         auth:
           rootUser: admin
           rootPassword: minio123456
-
         persistence:
           enabled: true
           size: 20Gi
           storageClass: local-path
-
         replicas: 4
         drivesPerNode: 1
 
+        minioAPIPort: 9000
+        minioConsolePort: 9001
+        
         service:
           type: ClusterIP
-          ports:
-            api: 9000
-            console: 9001
-
+          port: 9000
         consoleService:
           type: ClusterIP
+          port: 9001
 
         resources:
           requests:
@@ -62,15 +61,13 @@ spec:
           runAsUser: 1001
           runAsGroup: 1001
           fsGroup: 1001
-
         defaultBuckets: "datalake,json-data"
 
         mode: distributed
 
-        ingress:
+        consoleIngress:
           enabled: true
           ingressClassName: "traefik"
           path: /minio
           hosts:
             - ""
-          servicePort: 9001
