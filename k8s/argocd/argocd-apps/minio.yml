@@ -73,8 +73,4 @@ spec:
           path: /minio
           hosts:
             - ""
-          annotations:
-            nginx.ingress.kubernetes.io/rewrite-target: /
-            nginx.ingress.kubernetes.io/proxy-body-size: "0"
-            nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-            nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+          servicePort: 9001
