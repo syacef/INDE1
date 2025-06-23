@@ -31,6 +31,9 @@ spec:
           ingress:
             enabled: true
             ingressClassName: "traefik"
+            path: /prometheus
+            pathType: Prefix
+            tls: []
 
         grafana:
           enabled: true

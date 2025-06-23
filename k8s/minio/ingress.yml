@@ -20,7 +20,7 @@ spec:
     - match: PathPrefix(`/minio`)
       kind: Rule
       services:
-        - name: minio-console
+        - name: minio-console # https://github.com/minio/minio/discussions/16304
           port: 9001
       middlewares:
         - name: minio-strip
