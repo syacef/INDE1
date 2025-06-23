@@ -42,6 +42,7 @@ spec:
 
           environment:
             MINIO_CONSOLE_SUBPATH: "/minio"
+            MINIO_BROWSER_REDIRECT_URL: "http://192.168.121.235/minio" # temporary fix
 
           minioAPIPort: 9000
           minioConsolePort: 9001
