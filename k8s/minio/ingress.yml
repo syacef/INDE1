@@ -1,3 +1,12 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: minio-strip
+  namespace: minio
+spec:
+  stripPrefix:
+    prefixes:
+      - /minio
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -13,4 +22,5 @@ spec:
       services:
         - name: minio-console
           port: 9001
-
+      middlewares:
+        - name: minio-strip
