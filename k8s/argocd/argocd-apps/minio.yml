@@ -40,6 +40,9 @@ spec:
           replicas: 4
           drivesPerNode: 1
 
+          environment:
+            MINIO_CONSOLE_SUBPATH: "/minio"
+
           minioAPIPort: 9000
           minioConsolePort: 9001
           service:
