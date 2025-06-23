@@ -40,7 +40,11 @@ spec:
 
         minioAPIPort: 9000
         minioConsolePort: 9001
-        
+
+        environment:
+          MINIO_BROWSER_REDIRECT_URL: "/minio"
+          # MINIO_PROMETHEUS_URL
+
         service:
           type: ClusterIP
           port: 9000
