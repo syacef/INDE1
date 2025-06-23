@@ -22,7 +22,6 @@ spec:
     name: in-cluster
     namespace: minio
   sources:
-    # MinIO Helm Chart
     - repoURL: https://charts.min.io/
       chart: minio
       targetRevision: 5.4.0
