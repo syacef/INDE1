@@ -27,7 +27,7 @@ Distributed resilient architecture handling parking events in real time.
 ├── k8s
 │   ├── apps                     # deployment of each apps
 │   ├── argocd                   # deployment of argocd
-│   ├── argocd-apps              # argocd apps
+|   |   ├── argocd-apps              # argocd apps
 │   ├── kustomize.yml
 │   ├── kafka                    # CRD definition for the kafka operator + topics
 │   ├── spark                    # CRD definition for the spark operator (including scheduled jobs)
