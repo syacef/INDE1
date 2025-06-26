@@ -1,0 +1,109 @@
+{
+    "timestamp": "2025-06-26T12:00:00Z",
+    "stats_source": "srvc-stats",
+    "metrics": {
+      "occupancy": {
+        "lots": [
+          {
+            "parking_lot_id": "lot-01",
+            "capacity": 200,
+            "occupied": 148,
+            "occupancy_percent": 74.0
+          },
+          {
+            "parking_lot_id": "lot-02",
+            "capacity": 120,
+            "occupied": 91,
+            "occupancy_percent": 75.83
+          }
+        ],
+        "zones": [
+          {
+            "zone": "Blue Zone",
+            "occupied": 103,
+            "occupancy_percent": 82.4
+          },
+          {
+            "zone": "Red Zone",
+            "occupied": 68,
+            "occupancy_percent": 56.7
+          }
+        ]
+      },
+      "duration_stats": {
+        "avg_duration_minutes": 62,
+        "min_duration_minutes": 5,
+        "max_duration_minutes": 184,
+        "per_lot": [
+          {
+            "parking_lot_id": "lot-01",
+            "avg_duration_minutes": 59
+          },
+          {
+            "parking_lot_id": "lot-02",
+            "avg_duration_minutes": 67
+          }
+        ]
+      },
+      "revenue_simulation": {
+        "pricing_model": "flat_rate_per_minute",
+        "rate_eur_per_minute": 0.05,
+        "revenue_today_eur": 892.30,
+        "per_lot": [
+          {
+            "parking_lot_id": "lot-01",
+            "revenue_eur": 538.10
+          },
+          {
+            "parking_lot_id": "lot-02",
+            "revenue_eur": 354.20
+          }
+        ]
+      },
+      "heatmap_entries_per_hour": [
+        {
+          "hour": "07:00",
+          "entries": 53
+        },
+        {
+          "hour": "08:00",
+          "entries": 78
+        },
+        {
+          "hour": "09:00",
+          "entries": 102
+        }
+      ],
+      "vehicle_type_distribution": {
+        "car": 214,
+        "motorcycle": 32,
+        "truck": 12
+      },
+      "top_vehicles_by_frequency": [
+        {
+          "license_plate": "AB-123-CD",
+          "entries": 6
+        },
+        {
+          "license_plate": "XY-789-ZT",
+          "entries": 5
+        }
+      ],
+      "lot_with_highest_turnover": {
+        "parking_lot_id": "lot-01",
+        "total_sessions_today": 183
+      },
+      "entry_exit_ratio_per_hour": [
+        {
+          "hour": "08:00",
+          "entries": 78,
+          "exits": 34
+        },
+        {
+          "hour": "09:00",
+          "entries": 102,
+          "exits": 59
+        }
+      ]
+    }
+}

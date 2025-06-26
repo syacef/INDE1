@@ -1,0 +1,25 @@
+{
+    "eventType": "PARKING_ENTRY",
+    "timestamp": "2025-06-26T14:35:22Z",
+    "vehicle": {
+      "licensePlate": "AB-123-CD",
+      "type": "car",
+      "color": "blue",
+      "brand": "Toyota",
+      "model": "Corolla"
+    },
+    "driver": {
+      "id": "user-84726",
+      "name": "Jane Doe"
+    },
+    "parking": {
+      "parkingLotId": "lot-09",
+      "parkingSpotId": "B12",
+      "zone": "Level 2 - Blue Zone",
+      "entryGateId": "gate-east",
+      "geo": {
+        "lat": 48.8584,
+        "lon": 2.2945
+      }
+    }
+  }
