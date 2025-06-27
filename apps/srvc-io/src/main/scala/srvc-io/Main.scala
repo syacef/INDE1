@@ -53,18 +53,18 @@ object Main extends IOApp {
     IO.println(
       s"""
          |=== Parking Event Generator Configuration ===
-         |Events per second: ${EnvConfig.eventsPerSecond}
-         |Kafka topic: ${EnvConfig.kafkaTopic}
-         |Kafka servers: ${EnvConfig.kafkaServers}
-         |Parking lots: ${EnvConfig.parkingLots.mkString(", ")}
-         |Vehicle colors: ${EnvConfig.vehicleColors.mkString(", ")}
-         |Vehicle types: ${EnvConfig.vehicleTypes.mkString(", ")}
-         |Parking zones: ${EnvConfig.parkingZones.mkString(", ")}
-         |Parking duration range: ${EnvConfig.minParkingDuration / 1000}-${EnvConfig.maxParkingDuration / 1000} s
-         |Max spots per lot: ${EnvConfig.maxSpotsPerLot}
-         |Total spots: ${EnvConfig.parkingLots.length * EnvConfig.maxSpotsPerLot}
-         |Max retries: ${EnvConfig.maxRetries}
-         |Backoff: ${EnvConfig.backoffMs}ms
+         | Events per second: ${EnvConfig.eventsPerSecond}
+         | Kafka topic: ${EnvConfig.kafkaTopic}
+         | Kafka servers: ${EnvConfig.kafkaServers}
+         | Parking lots: ${EnvConfig.parkingLots.mkString(", ")}
+         | Vehicle colors: ${EnvConfig.vehicleColors.mkString(", ")}
+         | Vehicle types: ${EnvConfig.vehicleTypes.mkString(", ")}
+         | Parking slots: ${EnvConfig.parkingSlots.map(_.mkString("-")).mkString(", ")}
+         | Parking duration range: ${EnvConfig.minParkingDuration / 1000}-${EnvConfig.maxParkingDuration / 1000} s
+         | Handicap slots: ${EnvConfig.handicapSlots.map(_.mkString(", ")).mkString("; ")}
+         | Prometheus endpoint: ${EnvConfig.prometheusEndpoint}
+         | Max retries: ${EnvConfig.maxRetries}
+         | Backoff: ${EnvConfig.backoffMs}ms
          |=============================================
          |""".stripMargin
     )

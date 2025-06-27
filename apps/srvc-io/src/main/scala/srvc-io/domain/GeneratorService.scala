@@ -4,14 +4,14 @@ import cats.effect.IO
 import srvc_io.entities.{ EnvConfig, Parking, ParkingEvent, Vehicle }
 
 import java.time.Instant
-import scala.collection.{ immutable, mutable }
+import scala.collection.mutable
 import scala.util.Random
 
 object GeneratorService {
   case class ActiveSession(entryEvent: ParkingEvent, scheduledExitTime: Instant, durationMs: Long)
 
   private val activeParkingSessions = mutable.Map[String, ActiveSession]()
-  private val occupiedSpots         = mutable.Map[String, mutable.Set[String]]()
+  private val occupiedSpots         = mutable.Map[String, mutable.Set[Int]]()
 
   def cleanFinishedParkingSessions(): IO[Seq[ParkingEvent]] = IO {
     val now = Instant.now()
@@ -30,28 +30,30 @@ object GeneratorService {
         duration = Some(session.durationMs)
       )
 
-      markSpotAsAvailable(entryEvent.parking.parkingLotId, entryEvent.parking.parkingSpotId)
-      val _: Option[ActiveSession] = activeParkingSessions.remove(licensePlate)
+      markSpotAsAvailable(
+        entryEvent.parking.parkingLotId,
+        entryEvent.parking.parkingSpotId.toInt,
+        entryEvent.vehicle.licensePlate
+      )
 
       exitEvent
     }.toSeq
   }
 
   def generateEntryEvent(): IO[Option[ParkingEvent]] = {
-    val random       = new Random
-    val licensePlate = generateUniqueLicensePlate(random)
+    val random = new Random
 
-    val vehicle = Vehicle(
-      licensePlate = licensePlate,
-      vehicleType = EnvConfig.vehicleTypes(random.nextInt(EnvConfig.vehicleTypes.length)),
-      color = EnvConfig.vehicleColors(random.nextInt(EnvConfig.vehicleColors.length))
-    )
-
-    val parking = generateAvailableParking(random)
+    val parking = findAvailableParking(random)
     if (parking.parkingSpotId == "0") {
       IO(None)
     } else {
       val now = Instant.now()
+
+      val vehicle = Vehicle(
+        licensePlate = generateUniqueLicensePlate(random),
+        vehicleType = EnvConfig.vehicleTypes(random.nextInt(EnvConfig.vehicleTypes.length)),
+        color = EnvConfig.vehicleColors(random.nextInt(EnvConfig.vehicleColors.length))
+      )
 
       val durationMs = EnvConfig.minParkingDuration +
         random.nextLong(EnvConfig.maxParkingDuration - EnvConfig.minParkingDuration + 1)
@@ -67,22 +69,23 @@ object GeneratorService {
       )
 
       val session = ActiveSession(event, scheduledExitTime, durationMs)
-      activeParkingSessions(licensePlate) = session
-      markSpotAsOccupied(parking.parkingLotId, parking.parkingSpotId)
+      activeParkingSessions(vehicle.licensePlate) = session
+      markSpotAsOccupied(parking.parkingLotId, parking.parkingSpotId.toInt)
 
       IO(Some(event))
     }
   }
 
-  private def generateAvailableParking(random: Random): Parking = {
+  private def findAvailableParking(random: Random): Parking = {
     val attempts: Range.Inclusive = 1 to 50
     for (_ <- attempts) {
-      val parkingLotId  = EnvConfig.parkingLots(random.nextInt(EnvConfig.parkingLots.length))
-      val parkingSpotId = generateParkingSpotId(random)
-      val zone          = EnvConfig.parkingZones(random.nextInt(EnvConfig.parkingZones.length))
+      val parkingLotIndex = random.nextInt(EnvConfig.parkingLots.length)
+      val parkingLotId    = EnvConfig.parkingLots(parkingLotIndex)
+      val parkingSpotId   = generateParkingSpotId(random, parkingLotIndex)
 
       if (isSpotAvailable(parkingLotId, parkingSpotId)) {
-        return Parking(parkingLotId, parkingSpotId, zone)
+        val isHandicapped = EnvConfig.handicapSlots(parkingLotIndex).contains(parkingSpotId)
+        return Parking(parkingLotId, parkingSpotId.toString, isSlotHandicapped = isHandicapped)
       }
     }
 
@@ -90,40 +93,36 @@ object GeneratorService {
   }
 
   private def findAnyAvailableSpot(random: Random): Parking = {
-    for (parkingLotId <- EnvConfig.parkingLots) {
-      val occupiedSpotsInLot = occupiedSpots.getOrElse(parkingLotId, mutable.Set.empty[String])
-      val totalSpots         = EnvConfig.maxSpotsPerLot
+    for ((parkingLotId, lotIndex) <- EnvConfig.parkingLots.zipWithIndex) {
+      val occupiedSpotsInLot = occupiedSpots.getOrElse(parkingLotId, mutable.Set.empty[Int])
+      val availableSlots     = EnvConfig.parkingSlots(lotIndex)
+      val totalSlots         = availableSlots.length
 
-      if (occupiedSpotsInLot.size < totalSpots) {
-        val sections: immutable.NumericRange.Inclusive[Char] = 'A' to 'F'
-        for (section <- sections) {
-          val numbers: Range.Inclusive = 1 to (totalSpots / 6 + 1)
-          for (number <- numbers) {
-            val spotId = s"${section.toString}${number.toString}"
-            if (!occupiedSpotsInLot.contains(spotId)) {
-              val zone = EnvConfig.parkingZones(random.nextInt(EnvConfig.parkingZones.length))
-              return Parking(parkingLotId, spotId, zone)
-            }
+      if (occupiedSpotsInLot.size < totalSlots) {
+        for (slotId <- availableSlots)
+          if (!occupiedSpotsInLot.contains(slotId)) {
+            val isHandicapped = EnvConfig.handicapSlots(lotIndex).contains(slotId)
+            return Parking(parkingLotId, slotId.toString, isSlotHandicapped = isHandicapped)
           }
-        }
       }
     }
 
     val parkingLotId = EnvConfig.parkingLots(random.nextInt(EnvConfig.parkingLots.length))
-    val zone         = EnvConfig.parkingZones(random.nextInt(EnvConfig.parkingZones.length))
-    Parking(parkingLotId, "0", zone)
+    Parking(parkingLotId, "0", false)
   }
 
-  private def isSpotAvailable(parkingLotId: String, spotId: String): Boolean =
-    !occupiedSpots.getOrElse(parkingLotId, mutable.Set.empty[String]).contains(spotId)
+  private def isSpotAvailable(parkingLotId: String, spotId: Int): Boolean =
+    !occupiedSpots.getOrElse(parkingLotId, mutable.Set.empty[Int]).contains(spotId)
 
-  private def markSpotAsOccupied(parkingLotId: String, spotId: String): Unit = {
-    val spots      = occupiedSpots.getOrElseUpdate(parkingLotId, mutable.Set.empty[String])
+  private def markSpotAsOccupied(parkingLotId: String, spotId: Int): Unit = {
+    val spots      = occupiedSpots.getOrElseUpdate(parkingLotId, mutable.Set.empty[Int])
     val _: Boolean = spots.add(spotId)
   }
 
-  private def markSpotAsAvailable(parkingLotId: String, spotId: String): Unit =
+  private def markSpotAsAvailable(parkingLotId: String, spotId: Int, licensePlate: String): Unit = {
     occupiedSpots.get(parkingLotId).foreach(_.remove(spotId))
+    val _: Option[ActiveSession] = activeParkingSessions.remove(licensePlate)
+  }
 
   private def generateLicensePlate(random: Random): String = {
     val char1   = ('A' + random.nextInt(26)).toChar.toString
@@ -151,10 +150,9 @@ object GeneratorService {
     }
   }
 
-  private def generateParkingSpotId(random: Random): String = {
-    val section = ('A' + random.nextInt(6)).toChar
-    val number  = random.nextInt(EnvConfig.maxSpotsPerLot) + 1
-    s"${section.toString}${number.toString}"
+  private def generateParkingSpotId(random: Random, lotIndex: Int): Int = {
+    val availableSlots = EnvConfig.parkingSlots(lotIndex)
+    availableSlots(random.nextInt(availableSlots.length))
   }
 
   def getActiveSessions: Map[String, ParkingEvent] =
@@ -162,13 +160,14 @@ object GeneratorService {
 
   def getActiveSessionsWithSchedule: Map[String, ActiveSession] = activeParkingSessions.toMap
 
-  def getOccupiedSpots: Map[String, Set[String]] =
+  def getOccupiedSpots: Map[String, Set[Int]] =
     occupiedSpots.map { case (lot, spots) => lot -> spots.toSet }.toMap
 
   def getAvailableSpotCount: Map[String, Int] =
-    EnvConfig.parkingLots.map { lotId =>
-      val occupied = occupiedSpots.getOrElse(lotId, mutable.Set.empty[String]).size
-      lotId -> (EnvConfig.maxSpotsPerLot - occupied)
+    EnvConfig.parkingLots.zipWithIndex.map { case (lotId, lotIndex) =>
+      val occupied   = occupiedSpots.getOrElse(lotId, mutable.Set.empty[Int]).size
+      val totalSlots = EnvConfig.parkingSlots(lotIndex).length
+      lotId -> (totalSlots - occupied)
     }.toMap
 
   def clearActiveSessions(): Unit = {

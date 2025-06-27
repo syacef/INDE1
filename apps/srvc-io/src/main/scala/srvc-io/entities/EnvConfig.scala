@@ -6,19 +6,46 @@ object EnvConfig {
   private val dotenv = Dotenv.configure().ignoreIfMissing().load()
 
   val eventsPerSecond: Int     = dotenv.get("EVENTS_PER_SECOND", "10").toInt
-  val kafkaTopic: String       = dotenv.get("KAFKA_TOPIC", "parking-events")
-  val kafkaServers: String     = dotenv.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
   val parkingLots: Seq[String] = dotenv.get("PARKING_LOTS", "lot-01,lot-02").split(",").toSeq
-  val maxRetries: Int          = dotenv.get("RESILIENCE_MAX_RETRIES", "5").toInt
-  val backoffMs: Long          = dotenv.get("RESILIENCE_BACKOFF_MS", "500").toLong
-  val metricsPort: Int         = dotenv.get("METRICS_PORT", "9100").toInt
+  val parkingSlots: Seq[Seq[Int]] = dotenv
+    .get("PARKING_SLOTS", "1-10,11-20")
+    .split(",")
+    .map { range =>
+      range.split("-") match {
+        case Array(start, end) => (start.toInt to end.toInt).toSeq
+        case Array(single)     => Seq(single.toInt)
+        case _                 => Seq.empty[Int]
+      }
+    }
+    .toSeq
+  val handicapSlots: Seq[Seq[Int]] = dotenv
+    .get("HANDICAP_SLOTS", "1|4-10,11-12|20")
+    .split(",")
+    .map { lot =>
+      lot
+        .split('|')
+        .flatMap {
+          case range if range.contains("-") =>
+            val Array(start, end) = range.split("-").map(_.toInt)
+            start to end
+          case single =>
+            Seq(single.toInt)
+        }
+        .toSeq
+    }
+    .toSeq
   val vehicleColors: Seq[String] =
     dotenv.get("VEHICLE_COLORS", "red,blue,black,white,gray,silver,green").split(",").toSeq
   val vehicleTypes: Seq[String] = dotenv.get("VEHICLE_TYPES", "car,truck,motorcycle,van").split(",").toSeq
-  val parkingZones: Seq[String] = dotenv.get("PARKING_ZONES", "Blue Zone,Red Zone,Green Zone").split(",").toSeq
-  val driverNames: Seq[String]  = dotenv.get("DRIVER_NAMES", "John Smith,Jane Doe").split(",").toSeq
   val minParkingDuration: Int   = dotenv.get("MIN_PARKING_DURATION", "5").toInt
   val maxParkingDuration: Int   = dotenv.get("MAX_PARKING_DURATION", "180").toInt
-  val maxSpotsPerLot: Int       = dotenv.get("MAX_SPOTS_PER_LOT", "100").toInt
-  val exitProbability: Double   = dotenv.get("EXIT_PROBABILITY", "0.5").toDouble
+
+  // Prometheus
+  val prometheusEndpoint: String = dotenv.get("PROMETHEUS_ENDPOINT", "localhost:9100")
+
+  // Kafka
+  val kafkaTopic: String   = dotenv.get("KAFKA_TOPIC", "parking-events")
+  val kafkaServers: String = dotenv.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+  val backoffMs: Long      = dotenv.get("RESILIENCE_BACKOFF_MS", "500").toLong
+  val maxRetries: Int      = dotenv.get("RESILIENCE_MAX_RETRIES", "5").toInt
 }

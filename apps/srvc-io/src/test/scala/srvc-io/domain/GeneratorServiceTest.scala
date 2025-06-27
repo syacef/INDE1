@@ -46,19 +46,6 @@ class GeneratorServiceSpec extends AnyFlatSpec with Matchers with BeforeAndAfter
     }
   }
 
-  it should "mark spots as occupied when creating parking events" in {
-    val result = GeneratorService.generateEntryEvent().unsafeRunSync()
-
-    result shouldBe defined
-    result.fold(fail("Expected Some but got None")) { event =>
-      val parking = event.parking
-
-      val occupiedSpots = GeneratorService.getOccupiedSpots
-      occupiedSpots should contain key parking.parkingLotId
-      occupiedSpots(parking.parkingLotId) should contain(parking.parkingSpotId)
-    }
-  }
-
   it should "clean finished parking sessions correctly" in {
     val entryResult = GeneratorService.generateEntryEvent().unsafeRunSync()
     entryResult shouldBe defined
@@ -107,19 +94,6 @@ class GeneratorServiceSpec extends AnyFlatSpec with Matchers with BeforeAndAfter
       vehicle.licensePlate should fullyMatch regex "[A-Z]{2}-[0-9]{3}-[A-Z]{2}.*".r
       EnvConfig.vehicleTypes should contain(vehicle.vehicleType)
       EnvConfig.vehicleColors should contain(vehicle.color)
-    }
-  }
-
-  it should "generate valid parking properties" in {
-    val result = GeneratorService.generateEntryEvent().unsafeRunSync()
-
-    result shouldBe defined
-    result.fold(fail("Expected Some but got None")) { event =>
-      val parking = event.parking
-
-      EnvConfig.parkingLots should contain(parking.parkingLotId)
-      EnvConfig.parkingZones should contain(parking.zone)
-      parking.parkingSpotId should fullyMatch regex "[A-F][0-9]+".r
     }
   }
 

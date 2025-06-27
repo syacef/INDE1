@@ -17,5 +17,5 @@ case class Vehicle(
 case class Parking(
   parkingLotId: String,
   parkingSpotId: String,
-  zone: String
+  isSlotHandicapped: Boolean
 )
