@@ -13,7 +13,7 @@ import retry._
 import srvc_io.domain.GeneratorService
 import srvc_io.entities.{ EnvConfig, ParkingEvent }
 
-import scala.concurrent.duration.{DurationInt, DurationLong}
+import scala.concurrent.duration.{ DurationInt, DurationLong }
 
 object Main extends IOApp {
 

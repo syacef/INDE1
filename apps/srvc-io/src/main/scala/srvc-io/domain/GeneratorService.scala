@@ -139,7 +139,7 @@ object GeneratorService {
 
     uniquePlate.getOrElse {
       val basePlate = generateLicensePlate(random)
-      val suffix = f"${random.nextInt(999)}%03d"
+      val suffix    = f"${random.nextInt(999)}%03d"
       basePlate.take(6) + suffix
     }
   }
