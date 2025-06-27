@@ -1,16 +1,16 @@
 include:
+  - "ci/srvc-io.yml"
 #  - "ci/repo-account.yml"
 #  - "ci/srvc-alert.yml"
 #  - "ci/srvc-stats.yml"
 #  - "ci/srvc-notifier.yml"
-  - "ci/srvc-io.yml"
 
 verify-commit-message:
   image: alpine:3.18
   stage: verify-commit-message
   script:
     - |
-      if ! echo $CI_COMMIT_MESSAGE | grep -qE '(repo-account|srvc-io|srvc-stats|srvc-alert|srvc-notifier|k8s)'; then
+      if ! echo $CI_COMMIT_MESSAGE | grep -qE '(repo-account|srvc-io|srvc-stats|srvc-alert|srvc-notifier|k8s|apps|chore)'; then
         echo "Commit message must contains AT LEAST the name of one of the services to trigger the associated CI."
         exit 1
       fi
