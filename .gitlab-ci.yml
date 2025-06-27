@@ -1,9 +1,9 @@
-include: []
+include:
 #  - "ci/repo-account.yml"
 #  - "ci/srvc-alert.yml"
 #  - "ci/srvc-stats.yml"
 #  - "ci/srvc-notifier.yml"
-#  - "ci/srvc-io.yml"
+  - "ci/srvc-io.yml"
 
 verify-commit-message:
   image: alpine:3.18
