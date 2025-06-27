@@ -4,9 +4,8 @@ import cats.effect.IO
 import srvc_io.entities.{ EnvConfig, Parking, ParkingEvent, Vehicle }
 
 import java.time.Instant
-import scala.collection.mutable
+import scala.collection.{ immutable, mutable }
 import scala.util.Random
-import scala.collection.immutable
 
 object GeneratorService {
   case class ActiveSession(entryEvent: ParkingEvent, scheduledExitTime: Instant, durationMs: Long)
