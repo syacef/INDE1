@@ -24,4 +24,5 @@ Normal usage
 
 ```bash
 sbt scalafmtAll
+sbt test:scalafmt
 ```

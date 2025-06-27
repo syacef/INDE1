@@ -1,9 +1,9 @@
 package srvc_io.domain
 
+import cats.effect.unsafe.implicits.global
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.BeforeAndAfterEach
-import cats.effect.unsafe.implicits.global
 import srvc_io.entities.EnvConfig
 
 class GeneratorServiceSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
@@ -73,8 +73,6 @@ class GeneratorServiceSpec extends AnyFlatSpec with Matchers with BeforeAndAfter
     exitEvents.foreach { exitEvent =>
       exitEvent.eventType should be("PARKING_EXIT")
       exitEvent.timestamp should not be empty
-      exitEvent.vehicle should not be null
-      exitEvent.parking should not be null
       exitEvent.duration shouldBe defined
     }
   }

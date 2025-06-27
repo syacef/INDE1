@@ -1,31 +1,23 @@
-# Rules for linting and testing - run on any change to srvc-io
 .rules_srvc-io_lint_test:
   rules:
-    # Run on main branch when srvc-io files are changed
     - if: '$CI_COMMIT_BRANCH == "main"'
       changes:
         - "apps/srvc-io/**/*"
       when: always
-    # Run on merge requests when srvc-io files are changed
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
         - "apps/srvc-io/**/*"
       when: always
-    # Run on feature branches when srvc-io files are changed
     - if: '$CI_COMMIT_BRANCH != "main" && $CI_PIPELINE_SOURCE == "push"'
       changes:
         - "apps/srvc-io/**/*"
       when: always
-    # Skip if no relevant changes
     - when: never
 
-# Rules for building and pushing Docker images - only on tags
 .rules_srvc-io_build:
   rules:
-    # Only build and push on tags
     - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^srvc-io-v.*/'
       when: always
-    # Optional: allow manual builds on main branch
     - if: '$CI_COMMIT_BRANCH == "main"'
       changes:
         - "apps/srvc-io/**/*"
@@ -33,7 +25,6 @@
       allow_failure: true
     - when: never
 
-# Lint job - runs on code changes
 srvc-io:lint:
   extends: .rules_srvc-io_lint_test
   image:
@@ -50,7 +41,6 @@ srvc-io:lint:
       - ~/.sbt/
       - ~/.coursier/
 
-# Test job - runs on code changes
 srvc-io:test:
   extends: .rules_srvc-io_lint_test
   image:
@@ -74,7 +64,6 @@ srvc-io:test:
       - ~/.coursier/
   coverage: '/Total coverage: (\d+\.\d+)%/'
 
-# Build and push job - only on tags
 srvc-io:build:
   extends: .rules_srvc-io_build
   image:
