@@ -104,7 +104,7 @@ object Main extends IOApp {
       Ref.of[IO, Int](0).flatMap { counterRef =>
         def loop: IO[Unit] = for {
           _             <- IO.sleep((1000 / EnvConfig.eventsPerSecond).millis)
-          entryEventOpt <- GeneratorService.createParkingEvent()
+          entryEventOpt <- GeneratorService.generateEntryEvent()
           exitEvents    <- GeneratorService.cleanFinishedParkingSessions()
           _ <- entryEventOpt match {
             case Some(entryEvent) => logEvent(entryEvent) *> sendEvent(entryEvent, producer)

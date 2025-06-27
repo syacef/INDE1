@@ -14,17 +14,19 @@ class GeneratorServiceSpec extends AnyFlatSpec with Matchers with BeforeAndAfter
   }
 
   "GeneratorService" should "create a parking event when spots are available" in {
-    val result = GeneratorService.createParkingEvent().unsafeRunSync()
+    val result = GeneratorService.generateEntryEvent().unsafeRunSync()
 
     result shouldBe defined
-    result.get.eventType should be("PARKING_ENTRY")
-    result.get.vehicle.licensePlate should not be empty
-    result.get.parking.parkingSpotId should not be "0"
-    result.get.duration shouldBe defined
+    result.fold(fail("Expected Some but got None")) { event =>
+      event.eventType should be("PARKING_ENTRY")
+      event.vehicle.licensePlate should not be empty
+      event.parking.parkingSpotId should not be "0"
+      event.duration shouldBe defined
+    }
   }
 
   it should "generate unique license plates" in {
-    val results = (1 to 10).map(_ => GeneratorService.createParkingEvent().unsafeRunSync())
+    val results = (1 to 10).map(_ => GeneratorService.generateEntryEvent().unsafeRunSync())
 
     val licensePlates = results.flatten.map(_.vehicle.licensePlate)
     licensePlates should have size 10
@@ -32,39 +34,44 @@ class GeneratorServiceSpec extends AnyFlatSpec with Matchers with BeforeAndAfter
   }
 
   it should "track active parking sessions" in {
-    val result = GeneratorService.createParkingEvent().unsafeRunSync()
+    val result = GeneratorService.generateEntryEvent().unsafeRunSync()
 
     result shouldBe defined
-    val licensePlate = result.get.vehicle.licensePlate
+    result.fold(fail("Expected Some but got None")) { event =>
+      val licensePlate = event.vehicle.licensePlate
 
-    val activeSessions = GeneratorService.getActiveSessions
-    activeSessions should contain key licensePlate
-    activeSessions(licensePlate).eventType should be("PARKING_ENTRY")
+      val activeSessions = GeneratorService.getActiveSessions
+      activeSessions should contain key licensePlate
+      activeSessions(licensePlate).eventType should be("PARKING_ENTRY")
+    }
   }
 
   it should "mark spots as occupied when creating parking events" in {
-    val result = GeneratorService.createParkingEvent().unsafeRunSync()
+    val result = GeneratorService.generateEntryEvent().unsafeRunSync()
 
     result shouldBe defined
-    val parking = result.get.parking
+    result.fold(fail("Expected Some but got None")) { event =>
+      val parking = event.parking
 
-    val occupiedSpots = GeneratorService.getOccupiedSpots
-    occupiedSpots should contain key parking.parkingLotId
-    occupiedSpots(parking.parkingLotId) should contain(parking.parkingSpotId)
+      val occupiedSpots = GeneratorService.getOccupiedSpots
+      occupiedSpots should contain key parking.parkingLotId
+      occupiedSpots(parking.parkingLotId) should contain(parking.parkingSpotId)
+    }
   }
 
   it should "clean finished parking sessions correctly" in {
-    val entryResult = GeneratorService.createParkingEvent().unsafeRunSync()
+    val entryResult = GeneratorService.generateEntryEvent().unsafeRunSync()
     entryResult shouldBe defined
 
-    val entryEvent   = entryResult.get
-    val licensePlate = entryEvent.vehicle.licensePlate
+    entryResult.fold(fail("Expected Some but got None")) { entryEvent =>
+      val licensePlate = entryEvent.vehicle.licensePlate
 
-    val exitEvents = GeneratorService.cleanFinishedParkingSessions().unsafeRunSync()
-    exitEvents should have size 0
+      val exitEvents = GeneratorService.cleanFinishedParkingSessions().unsafeRunSync()
+      exitEvents should have size 0
 
-    val activeSessions = GeneratorService.getActiveSessions
-    activeSessions should contain key licensePlate
+      val activeSessions = GeneratorService.getActiveSessions
+      activeSessions should contain key licensePlate
+    }
   }
 
   it should "generate exit events with correct structure" in {
@@ -79,39 +86,45 @@ class GeneratorServiceSpec extends AnyFlatSpec with Matchers with BeforeAndAfter
 
   it should "track available spot counts correctly" in {
     val initialCounts = GeneratorService.getAvailableSpotCount
-    val result        = GeneratorService.createParkingEvent().unsafeRunSync()
+    val result        = GeneratorService.generateEntryEvent().unsafeRunSync()
 
     result shouldBe defined
-    val parking = result.get.parking
+    result.fold(fail("Expected Some but got None")) { event =>
+      val parking = event.parking
 
-    val updatedCounts = GeneratorService.getAvailableSpotCount
-    updatedCounts(parking.parkingLotId) should be < initialCounts(parking.parkingLotId)
+      val updatedCounts = GeneratorService.getAvailableSpotCount
+      updatedCounts(parking.parkingLotId) should be < initialCounts(parking.parkingLotId)
+    }
   }
 
   it should "generate valid vehicle properties" in {
-    val result = GeneratorService.createParkingEvent().unsafeRunSync()
+    val result = GeneratorService.generateEntryEvent().unsafeRunSync()
 
     result shouldBe defined
-    val vehicle = result.get.vehicle
+    result.fold(fail("Expected Some but got None")) { event =>
+      val vehicle = event.vehicle
 
-    vehicle.licensePlate should fullyMatch regex "[A-Z]{2}-[0-9]{3}-[A-Z]{2}.*".r
-    EnvConfig.vehicleTypes should contain(vehicle.vehicleType)
-    EnvConfig.vehicleColors should contain(vehicle.color)
+      vehicle.licensePlate should fullyMatch regex "[A-Z]{2}-[0-9]{3}-[A-Z]{2}.*".r
+      EnvConfig.vehicleTypes should contain(vehicle.vehicleType)
+      EnvConfig.vehicleColors should contain(vehicle.color)
+    }
   }
 
   it should "generate valid parking properties" in {
-    val result = GeneratorService.createParkingEvent().unsafeRunSync()
+    val result = GeneratorService.generateEntryEvent().unsafeRunSync()
 
     result shouldBe defined
-    val parking = result.get.parking
+    result.fold(fail("Expected Some but got None")) { event =>
+      val parking = event.parking
 
-    EnvConfig.parkingLots should contain(parking.parkingLotId)
-    EnvConfig.parkingZones should contain(parking.zone)
-    parking.parkingSpotId should fullyMatch regex "[A-F][0-9]+".r
+      EnvConfig.parkingLots should contain(parking.parkingLotId)
+      EnvConfig.parkingZones should contain(parking.zone)
+      parking.parkingSpotId should fullyMatch regex "[A-F][0-9]+".r
+    }
   }
 
   it should "handle clearing active sessions" in {
-    GeneratorService.createParkingEvent().unsafeRunSync()
+    GeneratorService.generateEntryEvent().unsafeRunSync()
 
     val activeBefore = GeneratorService.getActiveSessions
     activeBefore should not be empty
@@ -126,21 +139,25 @@ class GeneratorServiceSpec extends AnyFlatSpec with Matchers with BeforeAndAfter
   }
 
   it should "maintain session schedule information" in {
-    val result = GeneratorService.createParkingEvent().unsafeRunSync()
+    val result = GeneratorService.generateEntryEvent().unsafeRunSync()
 
     result shouldBe defined
-    val licensePlate = result.get.vehicle.licensePlate
+    result.fold(fail("Expected Some but got None")) { event =>
+      val licensePlate = event.vehicle.licensePlate
 
-    val sessionsWithSchedule = GeneratorService.getActiveSessionsWithSchedule
-    sessionsWithSchedule should contain key licensePlate
+      val sessionsWithSchedule = GeneratorService.getActiveSessionsWithSchedule
+      sessionsWithSchedule should contain key licensePlate
 
-    val session = sessionsWithSchedule(licensePlate)
-    session.entryEvent should be(result.get)
-    session.durationMs should be(result.get.duration.get)
+      val session = sessionsWithSchedule(licensePlate)
+      session.entryEvent should be(event)
+      event.duration.fold(fail("Expected duration to be defined")) { duration =>
+        session.durationMs should be(duration)
+      }
+    }
   }
 
   it should "handle multiple concurrent parking events" in {
-    val results = (1 to 5).map(_ => GeneratorService.createParkingEvent().unsafeRunSync())
+    val results = (1 to 5).map(_ => GeneratorService.generateEntryEvent().unsafeRunSync())
 
     results.flatten should have size 5
 
@@ -153,15 +170,20 @@ class GeneratorServiceSpec extends AnyFlatSpec with Matchers with BeforeAndAfter
   }
 
   it should "prevent double booking of the same spot" in {
-    val result1 = GeneratorService.createParkingEvent().unsafeRunSync()
-    val result2 = GeneratorService.createParkingEvent().unsafeRunSync()
+    val result1 = GeneratorService.generateEntryEvent().unsafeRunSync()
+    val result2 = GeneratorService.generateEntryEvent().unsafeRunSync()
 
     result1 shouldBe defined
     result2 shouldBe defined
 
-    val spot1 = result1.get.parking
-    val spot2 = result2.get.parking
+    (result1, result2) match {
+      case (Some(event1), Some(event2)) =>
+        val spot1 = event1.parking
+        val spot2 = event2.parking
 
-    (spot1.parkingLotId != spot2.parkingLotId) || (spot1.parkingSpotId != spot2.parkingSpotId) shouldBe true
+        (spot1.parkingLotId != spot2.parkingLotId) || (spot1.parkingSpotId != spot2.parkingSpotId) shouldBe true
+      case _ =>
+        fail("Expected both events to be defined")
+    }
   }
 }
