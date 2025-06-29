@@ -21,7 +21,47 @@ spec:
   destination:
     name: in-cluster
     namespace: apps
-  source:
-    repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
-    targetRevision: HEAD
-    path: k8s/apps
+  sources:
+    - repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
+      targetRevision: HEAD
+      path: k8s/apps
+
+    - repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
+      targetRevision: HEAD
+      path: k8s/apps/srvc-io
+      helm:
+        releaseName: srvc-io
+        values: |
+          image:
+            repository: registry.cri.epita.fr/mateo.lelong/inde1/srvc-io
+            tag: "v0.2.0"
+          replicas: 2
+          configs:
+            - parking:
+                slots: "1-50,51-100,101-150"
+                handicap: "1-5|10-15,51-55|60-65,101-105|110-115"
+                lots: "lot-01,lot-02,lot-03"
+                minDuration: "300000"
+                maxDuration: "10800000"
+                eventsPerSecond: 10
+              vehicle:
+                colors: "red,blue,green,yellow,black,white,gray,silver"
+                types: "car,truck,motorcycle,van,suv"
+            - parking:
+                slots: "50-100,0-50,0-100"
+                handicap: "50-51,51-55|60-65,"
+                lots: "lot-01,lot-02,lot-03"
+                minDuration: "300000"
+                maxDuration: "10800000"
+                eventsPerSecond: 10
+              vehicle:
+                colors: "green,yellow,black,white,gray,silver"
+                types: "car,van,suv"
+          kafka:
+            topic: "parking-events"  
+            bootstrapServers: "kafka:9092"
+          resilience:
+            maxRetries: 3
+            backoffMs: 500
+          monitoring:
+            prometheusEndpoint: "http://prometheus:9090"

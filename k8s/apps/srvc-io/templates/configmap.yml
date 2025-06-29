@@ -1,0 +1,38 @@
+{{- range .Values.configs }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: parking-lot-{{ .id }}-config
+data:
+  config.env: |
+    LOG_LEVEL=INFO
+    APP_NAME=srvc-io
+    PARKING_SLOTS={{ .parking.slots }}
+    HANDICAP_SLOTS={{ .parking.handicap }}
+    PARKING_LOTS={{ .parking.lots }}
+    EVENTS_PER_SECOND={{ .parking.eventsPerSecond }}
+
+    VEHICLE_COLORS={{ .vehicle.colors }}
+    VEHICLE_TYPES={{ .vehicle.types }}
+    MIN_PARKING_DURATION={{ .parking.minDuration }}
+    MAX_PARKING_DURATION={{ .parking.maxDuration }}
+
+    RESILIENCE_MAX_RETRIES={{ .Values.resilience.maxRetries }}
+    RESILIENCE_BACKOFF_MS={{ .Values.resilience.backoffMs }}
+
+    KAFKA_TOPIC={{ .Values.kafka.topic }}
+    KAFKA_BOOTSTRAP_SERVERS={{ .Values.kafka.bootstrapServers }}
+    PROMETHEUS_ENDPOINT={{ ..Values.monitoring.prometheusEndpoint }}
+---
+{{- end }}
+
+
+---
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: parking-config
+  namespace: apps
+data:
+  parking-config.env: |
