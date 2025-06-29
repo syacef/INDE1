@@ -22,3 +22,4 @@ resources:
   - redpanda.yml
   - monitoring.yml # Prometheus / Grafana / Dashboards / Rules
   - prometheus-operator.yml # grafana + prometheus operators
+  - redis-insight.yml # Redis Insight

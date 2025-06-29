@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - redis.yml
   - namespace.yml
+  - ingress.yml

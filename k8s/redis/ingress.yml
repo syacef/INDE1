@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: redis-insight-ingress
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+spec:
+  rules:
+  - host: "*"
+    http:
+      paths:
+      - path: /redis
+        pathType: Prefix
+        backend:
+          service:
+            name: redis-insight
+            port:
+              number: 8080
