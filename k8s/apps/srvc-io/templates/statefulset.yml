@@ -8,7 +8,7 @@ metadata:
     type: backends
 spec:
   serviceName: srvc-io
-  replicas: "{{ .Values.replicas }}"
+  replicas: {{ .Values.replicas }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
