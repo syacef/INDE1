@@ -1,8 +1,9 @@
-{{- range .Values.configs }}
+{{- $root := . }}
+{{- range $index, $config := $root.Values.configs }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: srvc-io-{{ .id }}-config
+  name: srvc-io-{{ $index }}-config
 data:
   config.env: |
     LOG_LEVEL=INFO
@@ -17,11 +18,11 @@ data:
     MIN_PARKING_DURATION={{ .parking.minDuration }}
     MAX_PARKING_DURATION={{ .parking.maxDuration }}
 
-    RESILIENCE_MAX_RETRIES={{ .Values.resilience.maxRetries }}
-    RESILIENCE_BACKOFF_MS={{ .Values.resilience.backoffMs }}
+    RESILIENCE_MAX_RETRIES={{ $root.Values.resilience.maxRetries }}
+    RESILIENCE_BACKOFF_MS={{ $root.Values.resilience.backoffMs }}
 
-    KAFKA_TOPIC={{ .Values.kafka.topic }}
-    KAFKA_BOOTSTRAP_SERVERS={{ .Values.kafka.bootstrapServers }}
-    PROMETHEUS_ENDPOINT={{ .Values.monitoring.prometheusEndpoint }}
+    KAFKA_TOPIC={{ $root.Values.kafka.topic }}
+    KAFKA_BOOTSTRAP_SERVERS={{ $root.Values.kafka.bootstrapServers }}
+    PROMETHEUS_ENDPOINT={{ $root.Values.monitoring.prometheusEndpoint }}
 ---
 {{- end }}

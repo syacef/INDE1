@@ -52,10 +52,11 @@ spec:
         - name: config
           projected:
             sources:
-            {{- range .Values.configs }}
+            {{- $root := . }}
+            {{- range $index, $config := $root.Values.configs }}
               - configMap:
-                  name: srvc-io-{{ .id }}-config
+                  name: srvc-io-{{ $index }}-config
                   items:
                     - key: config.env
-                      path: srvc-io-{{ .id }}.env
+                      path: srvc-io-{{ $index }}.env
             {{- end }}
