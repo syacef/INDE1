@@ -77,8 +77,8 @@ srvc-io:build:
     - echo "{\"auths\":{\"$DOCKER_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
   script:
     - /kaniko/executor 
-      --context . 
-      --dockerfile apps/srvc-io/Dockerfile 
+      --context apps/srvc-io
+      --dockerfile Dockerfile 
       --destination $DOCKER_IMAGE:$DOCKER_TAG
       --destination $DOCKER_IMAGE:latest
       --cache=true
