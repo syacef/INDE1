@@ -1,51 +1,85 @@
-.rules_repo-account:
+.rules_repo-account_lint_test:
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_MESSAGE =~ /repo-account/'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - "apps/repo-account/**/*"
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - "apps/repo-account/**/*"
+      when: always
+    - if: '$CI_COMMIT_BRANCH != "main" && $CI_PIPELINE_SOURCE == "push"'
+      changes:
+        - "apps/repo-account/**/*"
       when: always
     - when: never
 
+.rules_repo-account_build:
+  rules:
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^repo-account.*/'
+      when: always
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - "apps/repo-account/**/*"
+      when: manual
+      allow_failure: true
+    - when: never
+
 repo-account:lint:
-  extends: .rules_repo-account
+  extends: .rules_repo-account_lint_test
   image:
     name: sbtscala/scala-sbt:graalvm-community-24.0.1_1.11.2_3.7.1
-    pull_policy: if-not-present
   stage: lint
   script:
     - cd apps/repo-account
-    # TODO
+    - sbt lint
+  cache:
+    key: repo-account-sbt-cache-$CI_COMMIT_REF_SLUG
+    paths:
+      - apps/repo-account/target/
+      - ~/.sbt/
+      - ~/.coursier/
 
 repo-account:test:
-  extends: .rules_repo-account
+  extends: .rules_repo-account_lint_test
   image:
     name: sbtscala/scala-sbt:graalvm-community-24.0.1_1.11.2_3.7.1
-    pull_policy: if-not-present
   stage: test
-  # services:
-  #   - name: mongo:8.0.6-noble
-  #     alias: mongo
-  #     pull_policy: if-not-present
-  #   - name: redis:8.0-M04-alpine3.21
-  #     alias: redis
-  #     pull_policy: if-not-present
-  #     command: ["redis-server","--requirepass", "admin"]
-  #   - name: minio/minio:latest
-  #     alias: minio
-  #     pull_policy: if-not-present
-  #     command: ["server","/data", "--console-address",":9001"]
   script:
-    - sbt test
+    - cd apps/repo-account
+    - sbt clean test coverageReport
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: apps/repo-account/target/scala-2.13/coverage-report/cobertura.xml
+    expire_in: 1 week
+  cache:
+    key: repo-account-sbt-cache-$CI_COMMIT_REF_SLUG
+    paths:
+      - apps/repo-account/target/
+      - ~/.sbt/
+      - ~/.coursier/
+  coverage: '/Total coverage: (\d+\.\d+)%/'
 
 repo-account:build:
-  extends: .rules_repo-account
+  extends: .rules_repo-account_build
   image:
     name: gcr.io/kaniko-project/executor:v1.23.2-debug
     entrypoint: [""]
-    pull_policy: if-not-present
   stage: build
   variables:
     DOCKER_REGISTRY: $CI_REGISTRY
-    DOCKER_IMAGE: $DOCKER_REGISTRY/repo-account
+    DOCKER_IMAGE: $CI_REGISTRY/repo-account
     DOCKER_TAG: $CI_COMMIT_TAG
-  script:
+  before_script:
+    - echo "Building Docker image for tag $CI_COMMIT_TAG"
     - echo "{\"auths\":{\"$DOCKER_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor --context . --dockerfile apps/Dockerfile --destination $DOCKER_IMAGE:$DOCKER_TAG
+  script:
+    - /kaniko/executor 
+      --context apps/srvc-io
+      --dockerfile Dockerfile
+      --destination $DOCKER_IMAGE:$DOCKER_TAG
+      --destination $DOCKER_IMAGE:latest
+      --cache=true
+      --cache-ttl=24h
