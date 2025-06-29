@@ -4,13 +4,17 @@ WORKDIR /app
 
 COPY build.sbt ./
 COPY project ./project/
-COPY src ./src/
-RUN sbt clean compile package
 
-FROM openjdk:17-jre-slim
+RUN sbt update
+
+COPY src ./src/
+RUN sbt clean assembly
+
+FROM eclipse-temurin:17-jre-ubi9-minimal
 
 WORKDIR /app
-COPY --from=build /app/target/scala-*/**.jar ./app.jar
+
+COPY --from=build /app/target/scala-*/srvc-io-assembly-*.jar ./app.jar
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
 CMD []

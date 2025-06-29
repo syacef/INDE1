@@ -7,7 +7,6 @@
 
 # targets
 target/
-project/
 .bsp/
 spotless-index
 javadoc-bundle-options/
@@ -35,7 +34,6 @@ helm/
 .kube/
 
 # Environment and Secrets
-.env
 .venv
 
 # Gitlab CI
