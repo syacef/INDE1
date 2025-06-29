@@ -27,13 +27,11 @@ spec:
     helm:
       values: |
         fullnameOverride: "prometheus"
-        prometheus:
-          ingress:
-            enabled: true
-            ingressClassName: "traefik"
-            path: /prometheus
-            pathType: Prefix
-            tls: []
+        ingress:
+          enabled: true
+          ingressClassName: "traefik"
+          paths: ["/prometheus"]
+          tls: []
 
         grafana:
           enabled: true
