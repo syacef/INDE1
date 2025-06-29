@@ -40,15 +40,9 @@ spec:
               memory: "512Mi"
               cpu: "500m"
           volumeMounts:
-            - name: entrypoint
-              mountPath: /mnt
             - name: config
               mountPath: /config
       volumes:
-        - name: entrypoint
-          configMap:
-            name: srvc-io-entrypoint
-            defaultMode: 0755
         - name: config
           projected:
             sources:
