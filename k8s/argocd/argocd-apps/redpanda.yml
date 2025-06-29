@@ -23,6 +23,7 @@ spec:
     chart: console
     targetRevision: "v3.1.0"
     helm: # https://docs.redpanda.com/current/reference/k-console-helm-spec
+      # https://github.com/redpanda-data/redpanda-operator/blob/main/charts/console/
       values: |
         autoscaling:
           enabled: true
@@ -32,6 +33,8 @@ spec:
         config: # https://docs.redpanda.com/current/console/config/configure-console/
           kafka:
             brokers: ["kafka-kafka-bootstrap.kafka.svc:9092"]
+          server:
+            basePath: /redpanda
 
         resources:
           limits:
@@ -44,9 +47,6 @@ spec:
         ingress:
           enabled: true
           className: traefik
-          annotations:
-            traefik.ingress.kubernetes.io/router.entrypoints: web
-            traefik.ingress.kubernetes.io/router.rule: "PathPrefix(`/redpanda`)"
           hosts:
             - host: ""
               paths:
