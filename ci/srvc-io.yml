@@ -29,7 +29,6 @@ srvc-io:lint:
   extends: .rules_srvc-io_lint_test
   image:
     name: sbtscala/scala-sbt:graalvm-community-24.0.1_1.11.2_3.7.1
-    pull_policy: if-not-present
   stage: lint
   script:
     - cd apps/srvc-io
@@ -45,7 +44,6 @@ srvc-io:test:
   extends: .rules_srvc-io_lint_test
   image:
     name: sbtscala/scala-sbt:graalvm-community-24.0.1_1.11.2_3.7.1
-    pull_policy: if-not-present
   stage: test
   script:
     - cd apps/srvc-io
@@ -69,7 +67,6 @@ srvc-io:build:
   image:
     name: gcr.io/kaniko-project/executor:v1.23.2-debug
     entrypoint: [""]
-    pull_policy: if-not-present
   stage: build
   variables:
     DOCKER_REGISTRY: $CI_REGISTRY
