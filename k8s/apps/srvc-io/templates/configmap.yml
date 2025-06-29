@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: parking-lot-{{ .id }}-config
+  name: srvc-io-{{ .id }}-config
 data:
   config.env: |
     LOG_LEVEL=INFO
@@ -25,14 +25,3 @@ data:
     PROMETHEUS_ENDPOINT={{ ..Values.monitoring.prometheusEndpoint }}
 ---
 {{- end }}
-
-
----
-# ConfigMap
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: parking-config
-  namespace: apps
-data:
-  parking-config.env: |

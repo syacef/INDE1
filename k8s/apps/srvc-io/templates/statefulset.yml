@@ -7,7 +7,7 @@ metadata:
     app: srvc-io
     type: backends
 spec:
-  serviceName: "srvc-io"
+  serviceName: srvc-io
   replicas: "{{ .Values.replicas }}"
   strategy:
     type: RollingUpdate
@@ -47,15 +47,15 @@ spec:
       volumes:
         - name: entrypoint
           configMap:
-            name: parking-entrypoint
+            name: srvc-io-entrypoint
             defaultMode: 0755
         - name: config
           projected:
             sources:
             {{- range .Values.configs }}
               - configMap:
-                  name: parking-lot-{{ .id }}-config
+                  name: srvc-io-{{ .id }}-config
                   items:
                     - key: config.env
-                      path: parking-{{ .id }}.env
+                      path: srvc-io-{{ .id }}.env
             {{- end }}

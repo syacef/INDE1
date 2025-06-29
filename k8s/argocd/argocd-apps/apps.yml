@@ -34,7 +34,7 @@ spec:
         values: |
           image:
             repository: registry.cri.epita.fr/mateo.lelong/inde1/srvc-io
-            tag: "v0.2.0"
+            tag: "v0.2.2"
           replicas: 2
           configs:
             - parking:
@@ -58,10 +58,10 @@ spec:
                 colors: "green,yellow,black,white,gray,silver"
                 types: "car,van,suv"
           kafka:
-            topic: "parking-events"  
-            bootstrapServers: "kafka:9092"
+            topic: "parking-event-topic"  
+            bootstrapServers: "kafka-kafka-bootstrap.kafka.svc.cluster.local:9092"
           resilience:
             maxRetries: 3
             backoffMs: 500
           monitoring:
-            prometheusEndpoint: "http://prometheus:9090"
+            prometheusEndpoint: "http://prometheus-prometheus.prometheus-operator.svc.cluster.local:9090"

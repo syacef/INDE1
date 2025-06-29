@@ -1,6 +1,6 @@
 image:
   repository: registry.cri.epita.fr/mateo.lelong/inde1/srvc-io
-  tag: "v0.2.0"
+  tag: "v0.2.2"
 replicas: 2
 
 configs:
