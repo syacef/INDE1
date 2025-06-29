@@ -19,33 +19,33 @@ spec:
   destination:
     name: in-cluster
     namespace: redis
-  sources:
-    - repoURL: https://spy86.github.io/redisinsight
-      chart: redisinsight 
-      targetRevision: 0.1.0
-      values: |
-        autoscaling:
-          enabled: true
-          minReplicas: 1
-          maxReplicas: 3
+  source:
+    repoURL: https://spy86.github.io/redisinsight
+    chart: redisinsight 
+    targetRevision: 0.1.0
+    values: |
+      autoscaling:
+        enabled: true
+        minReplicas: 1
+        maxReplicas: 3
 
-        namespace: redis
+      namespace: redis
 
-        resources:
-          limits:
-            memory: 512Mi
-            cpu: 250m
-          requests:
-            memory: 256Mi
-            cpu: 100m
+      resources:
+        limits:
+          memory: 512Mi
+          cpu: 250m
+        requests:
+          memory: 256Mi
+          cpu: 100m
 
-        image:
-          pullPolicy: IfNotPresent
-          repository: redislabs/redisinsight
-          tag: 2.70
+      image:
+        pullPolicy: IfNotPresent
+        repository: redislabs/redisinsight
+        tag: 2.70
 
-        fullnameOverride: redis-insight
+      fullnameOverride: redis-insight
 
-        service:
-          type: ClusterIP
-          port: 8080
+      service:
+        type: ClusterIP
+        port: 8080
