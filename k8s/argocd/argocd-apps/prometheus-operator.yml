@@ -29,15 +29,24 @@ spec:
         fullnameOverride: "prometheus"
 
         prometheus:
+          enabled: true
+          service:
+            port: 9090
+
+          prometheusSpec:
+            routePrefix: /prometheus
+
           ingress:
             enabled: true
             ingressClassName: "traefik"
-            pathType: Prefix
-            annotations: {}
             hosts:
-              - host: ""
-                paths:
-                  - path: /prometheus
+              - ""
+            paths:
+              - /prometheus
+            pathType: Prefix
+            servicePort: 9090
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: web
             tls: []
 
         grafana:
