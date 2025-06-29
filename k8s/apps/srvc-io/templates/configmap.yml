@@ -22,6 +22,6 @@ data:
 
     KAFKA_TOPIC={{ .Values.kafka.topic }}
     KAFKA_BOOTSTRAP_SERVERS={{ .Values.kafka.bootstrapServers }}
-    PROMETHEUS_ENDPOINT={{ ..Values.monitoring.prometheusEndpoint }}
+    PROMETHEUS_ENDPOINT={{ .Values.monitoring.prometheusEndpoint }}
 ---
 {{- end }}
