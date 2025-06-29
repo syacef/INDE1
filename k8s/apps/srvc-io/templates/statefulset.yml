@@ -39,18 +39,9 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
-          volumeMounts:
-            - name: config
-              mountPath: /config
-      volumes:
-        - name: config
-          projected:
-            sources:
+          envFrom:
             {{- $root := . }}
             {{- range $index, $config := $root.Values.configs }}
-              - configMap:
-                  name: srvc-io-{{ $index }}-config
-                  items:
-                    - key: config.env
-                      path: srvc-io-{{ $index }}.env
+            - configMapRef:
+                name: srvc-io-{{ $index }}-config
             {{- end }}

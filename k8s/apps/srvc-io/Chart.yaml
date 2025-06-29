@@ -3,4 +3,4 @@ apiVersion: v2
 name: srvc-io
 description: A Helm chart for srvc-io parking service
 version: 0.2.2
-appVersion: "v0.2.0"
+appVersion: "v0.2.2"

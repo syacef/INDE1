@@ -5,24 +5,23 @@ kind: ConfigMap
 metadata:
   name: srvc-io-{{ $index }}-config
 data:
-  config.env: |
-    LOG_LEVEL=INFO
-    APP_NAME=srvc-io
-    PARKING_SLOTS={{ .parking.slots }}
-    HANDICAP_SLOTS={{ .parking.handicap }}
-    PARKING_LOTS={{ .parking.lots }}
-    EVENTS_PER_SECOND={{ .parking.eventsPerSecond }}
+  LOG_LEVEL: INFO
+  APP_NAME: srvc-io
+  PARKING_SLOTS: "{{ .parking.slots }}"
+  HANDICAP_SLOTS: "{{ .parking.handicap }}"
+  PARKING_LOTS: "{{ .parking.lots }}"
+  EVENTS_PER_SECOND: {{ .parking.eventsPerSecond }}
 
-    VEHICLE_COLORS={{ .vehicle.colors }}
-    VEHICLE_TYPES={{ .vehicle.types }}
-    MIN_PARKING_DURATION={{ .parking.minDuration }}
-    MAX_PARKING_DURATION={{ .parking.maxDuration }}
+  VEHICLE_COLORS: "{{ .vehicle.colors }}"
+  VEHICLE_TYPES: "{{ .vehicle.types }}"
+  MIN_PARKING_DURATION: {{ .parking.minDuration }}
+  MAX_PARKING_DURATION: {{ .parking.maxDuration }}
 
-    RESILIENCE_MAX_RETRIES={{ $root.Values.resilience.maxRetries }}
-    RESILIENCE_BACKOFF_MS={{ $root.Values.resilience.backoffMs }}
+  RESILIENCE_MAX_RETRIES: {{ $root.Values.resilience.maxRetries }}
+  RESILIENCE_BACKOFF_MS: {{ $root.Values.resilience.backoffMs }}
 
-    KAFKA_TOPIC={{ $root.Values.kafka.topic }}
-    KAFKA_BOOTSTRAP_SERVERS={{ $root.Values.kafka.bootstrapServers }}
-    PROMETHEUS_ENDPOINT={{ $root.Values.monitoring.prometheusEndpoint }}
+  KAFKA_TOPIC: "{{ $root.Values.kafka.topic }}"
+  KAFKA_BOOTSTRAP_SERVERS: "{{ $root.Values.kafka.bootstrapServers }}"
+  PROMETHEUS_ENDPOINT: "{{ $root.Values.monitoring.prometheusEndpoint }}"
 ---
 {{- end }}
