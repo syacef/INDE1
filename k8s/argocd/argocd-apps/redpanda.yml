@@ -43,6 +43,7 @@ spec:
 
         ingress:
           enabled: true
+          className: traefik
           annotations:
             traefik.ingress.kubernetes.io/router.entrypoints: web
             traefik.ingress.kubernetes.io/router.rule: "PathPrefix(`/redpanda`)"
@@ -51,5 +52,6 @@ spec:
               paths:
                 - path: /redpanda
                   pathType: Prefix
+          tls: []
 
         replicaCount: 1
