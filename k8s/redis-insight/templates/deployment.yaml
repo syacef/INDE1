@@ -40,6 +40,11 @@ spec:
             - name: http
               containerPort: 5540
               protocol: TCP
+          env:
+            {{- range .Values.additionalEnv }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
           # livenessProbe:
           #   httpGet:
           #     path: /healthcheck/
