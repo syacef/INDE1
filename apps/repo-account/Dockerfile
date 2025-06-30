@@ -7,7 +7,7 @@ COPY project ./project/
 COPY src ./src/
 RUN sbt clean compile package
 
-FROM openjdk:17-jre-slim
+FROM eclipse-temurin:17-jre-ubi9-minimal
 
 WORKDIR /app
 COPY --from=build /app/target/scala-*/**.jar ./app.jar
