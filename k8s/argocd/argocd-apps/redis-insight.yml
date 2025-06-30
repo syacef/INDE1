@@ -45,7 +45,3 @@ spec:
         tag: 2.70
 
       fullnameOverride: redis-insight
-
-      service:
-        type: ClusterIP
-        port: 8080
