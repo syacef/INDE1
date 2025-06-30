@@ -1,5 +1,5 @@
 name := "repo_account"
-version := "0.1.3"
+version := "0.1.4"
 
 scalaVersion := "2.13.16"
 
@@ -12,7 +12,6 @@ Test / scalaSource := baseDirectory.value / "src" / "test" / "scala"
 Test / resourceDirectory := baseDirectory.value / "src" / "test" / "resources"
 
 ThisBuild  / envFileName := ".env"
-
 
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 ThisBuild / semanticdbEnabled := true
@@ -35,8 +34,8 @@ addCommandAlias("lint", "; scalafmtCheck; test:scalafmtCheck; scalafix --check; 
 addCommandAlias("fix", "; scalafmt; test:scalafmt; scalafix; test:scalafix")
 
 assemblyMergeStrategy in assembly := {
-    case PathList("META-INF", _*) => MergeStrategy.discard
-    case _                        => MergeStrategy.first
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x => MergeStrategy.first
 }
 
 target := baseDirectory.value / "target"

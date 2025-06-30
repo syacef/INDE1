@@ -6,5 +6,6 @@ Scala app managing accounts
 |-----------------------|----------------------------|-----------------------------------------------------|---------------|
 | `appHost`             | `APP_HOST`                 | `0.0.0.0`                                           | `String`      |
 | `appPort`             | `APP_PORT`                 | `"8080"`                                            | `String`      |
-| `redisUrl`            | `REDIS_URL`                | `"redis://localhost:6379"`                          | `String`      |
+| `redisHost`           | `REDIS_HOST`               | `"localhost"`                                       | `String`      |
+| `redisPort`           | `REDIS_PORT`               | `"6379"`                                            | `Int`         |
 | `redisPassword`       | `REDIS_PASSWORD`           | `""`                                                | `String`      |
