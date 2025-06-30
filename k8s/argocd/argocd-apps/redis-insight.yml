@@ -20,28 +20,30 @@ spec:
     name: in-cluster
     namespace: redis
   source:
-    repoURL: https://spy86.github.io/redisinsight
-    chart: redisinsight 
-    targetRevision: 0.1.0
-    values: |
-      autoscaling:
-        enabled: true
-        minReplicas: 1
-        maxReplicas: 3
+    - repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
+      targetRevision: HEAD
+      path: k8s/redis-insight
+      helm:
+        releaseName: redis-insight
+        values: |
+          autoscaling:
+            enabled: true
+            minReplicas: 1
+            maxReplicas: 3
 
-      namespace: redis
+          namespace: redis
 
-      resources:
-        limits:
-          memory: 512Mi
-          cpu: 250m
-        requests:
-          memory: 256Mi
-          cpu: 100m
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: 250m
+            requests:
+              memory: 256Mi
+              cpu: 100m
 
-      image:
-        pullPolicy: IfNotPresent
-        repository: redislabs/redisinsight
-        tag: 2.70
+          image:
+            pullPolicy: IfNotPresent
+            repository: redislabs/redisinsight
+            tag: 2.70
 
-      fullnameOverride: redis-insight
+          fullnameOverride: redis-insight
