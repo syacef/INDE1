@@ -5,6 +5,9 @@ namespace: argocd
 resources:
   - namespace.yml
   - install.yml # https://raw.githubusercontent.com/argoproj/argo-cd/v2.11.5/manifests/install.yaml
+  # Traefik CRDs and RBAC
+  - https://raw.githubusercontent.com/traefik/traefik/v3.4/docs/content/reference/dynamic-configuration/kubernetes-crd-definition-v1.yml
+  - https://raw.githubusercontent.com/traefik/traefik/v3.4/docs/content/reference/dynamic-configuration/kubernetes-crd-rbac.yml
   - ingress.yml
   - argocd-apps
 
