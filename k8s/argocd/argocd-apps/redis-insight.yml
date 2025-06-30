@@ -42,3 +42,6 @@ spec:
           repository: redislabs/redisinsight
           tag: "2.70"  # Quote version numbers to avoid YAML parsing issues
         fullnameOverride: redis-insight
+        additionalEnv:
+          - name: RI_PROXY_PATH
+            value: /redis
