@@ -41,19 +41,19 @@ spec:
                 slots: "1-50,51-100,101-150"
                 handicap: "1-5|10-15,51-55|60-65,101-105|110-115"
                 lots: "lot-01,lot-02,lot-03"
-                minDuration: "300000"
-                maxDuration: "10800000"
-                eventsPerSecond: 10
+                minDuration: "30000"
+                maxDuration: "1080000"
+                eventsPerSecond: 1
               vehicle:
                 colors: "red,blue,green,yellow,black,white,gray,silver"
                 types: "car,truck,motorcycle,van,suv"
             - parking:
                 slots: "50-100,0-50,0-100"
-                handicap: "50-51,51-55|60-65,"
+                handicap: "50-51,51-55|60-65,0-10"
                 lots: "lot-01,lot-02,lot-03"
-                minDuration: "300000"
-                maxDuration: "10800000"
-                eventsPerSecond: 10
+                minDuration: "30000"
+                maxDuration: "1080000"
+                eventsPerSecond: 1
               vehicle:
                 colors: "green,yellow,black,white,gray,silver"
                 types: "car,van,suv"
