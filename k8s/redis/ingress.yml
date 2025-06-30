@@ -15,6 +15,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: redis-insight-redisinsight
+            name: redis-insight
             port:
               number: 80
