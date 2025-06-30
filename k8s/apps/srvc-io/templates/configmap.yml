@@ -4,24 +4,23 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: srvc-io-{{ $index }}-config
+  namespace: apps
 data:
-  LOG_LEVEL: INFO
-  APP_NAME: srvc-io
-  PARKING_SLOTS: "{{ .parking.slots }}"
-  HANDICAP_SLOTS: "{{ .parking.handicap }}"
-  PARKING_LOTS: "{{ .parking.lots }}"
-  EVENTS_PER_SECOND: {{ .parking.eventsPerSecond }}
-
-  VEHICLE_COLORS: "{{ .vehicle.colors }}"
-  VEHICLE_TYPES: "{{ .vehicle.types }}"
-  MIN_PARKING_DURATION: {{ .parking.minDuration }}
-  MAX_PARKING_DURATION: {{ .parking.maxDuration }}
-
-  RESILIENCE_MAX_RETRIES: {{ $root.Values.resilience.maxRetries }}
-  RESILIENCE_BACKOFF_MS: {{ $root.Values.resilience.backoffMs }}
-
-  KAFKA_TOPIC: "{{ $root.Values.kafka.topic }}"
-  KAFKA_BOOTSTRAP_SERVERS: "{{ $root.Values.kafka.bootstrapServers }}"
-  PROMETHEUS_ENDPOINT: "{{ $root.Values.monitoring.prometheusEndpoint }}"
+  config.env: |
+    LOG_LEVEL=INFO
+    APP_NAME=srvc-io
+    PARKING_SLOTS="{{ $config.parking.slots }}"
+    HANDICAP_SLOTS="{{ $config.parking.handicap }}"
+    PARKING_LOTS="{{ $config.parking.lots }}"
+    EVENTS_PER_SECOND={{ $config.parking.eventsPerSecond }}
+    VEHICLE_COLORS="{{ $config.vehicle.colors }}"
+    VEHICLE_TYPES="{{ $config.vehicle.types }}"
+    MIN_PARKING_DURATION={{ $config.parking.minDuration }}
+    MAX_PARKING_DURATION={{ $config.parking.maxDuration }}
+    RESILIENCE_MAX_RETRIES={{ $root.Values.resilience.maxRetries }}
+    RESILIENCE_BACKOFF_MS={{ $root.Values.resilience.backoffMs }}
+    KAFKA_TOPIC="{{ $root.Values.kafka.topic }}"
+    KAFKA_BOOTSTRAP_SERVERS="{{ $root.Values.kafka.bootstrapServers }}"
+    PROMETHEUS_ENDPOINT="{{ $root.Values.monitoring.prometheusEndpoint }}"
 ---
 {{- end }}

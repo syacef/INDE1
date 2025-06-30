@@ -9,11 +9,10 @@ metadata:
 spec:
   serviceName: srvc-io
   replicas: {{ .Values.replicas }}
-  strategy:
+  updateStrategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
-      maxSurge: 1
   selector:
     matchLabels:
       app: srvc-io
@@ -28,20 +27,66 @@ spec:
     spec:
       imagePullSecrets:
         - name: pull-secret
+      initContainers:
+      - name: config-selector
+        image: busybox:1.35
+        command: ['sh', '-c']
+        args:
+        - |
+          POD_INDEX=${HOSTNAME##*-}
+          echo "Pod index: $POD_INDEX"
+          echo $POD_INDEX > /shared/pod-index
+        volumeMounts:
+        - name: shared-data
+          mountPath: /shared
       containers:
-        - name: srvc-io
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: IfNotPresent
-          resources:
-            requests:
-              memory: "256Mi"
-              cpu: "250m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
-          envFrom:
-            {{- $root := . }}
-            {{- range $index, $config := $root.Values.configs }}
-            - configMapRef:
-                name: srvc-io-{{ $index }}-config
-            {{- end }}
+      - name: srvc-io
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+        - name: POD_INDEX
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: shared-data
+          mountPath: /shared
+        - name: config-volume
+          mountPath: /config
+        command: ['/bin/sh']
+        args:
+        - -c
+        - |
+          POD_INDEX=${HOSTNAME##*-}
+          echo "Loading config for pod index: $POD_INDEX"
+
+          if [ -f "/config/config-${POD_INDEX}.env" ]; then
+            set -a
+            source "/config/config-${POD_INDEX}.env"
+            set +a
+            echo "Loaded config-${POD_INDEX}.env"
+          else
+            echo "Config file for index ${POD_INDEX} not found, using default"
+          fi
+
+          java -jar /app/app.jar
+      volumes:
+      - name: shared-data
+        emptyDir: {}
+      - name: config-volume
+        projected:
+          sources:
+          {{- range $index, $config := .Values.configs }}
+          - configMap:
+              name: srvc-io-{{ $index }}-config
+              items:
+              - key: config.env
+                path: config-{{ $index }}.env
+          {{- end }}
