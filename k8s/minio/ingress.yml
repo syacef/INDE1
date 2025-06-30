@@ -1,4 +1,4 @@
-apiVersion: traefik.io/v1alpha1
+apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
   name: minio-strip
@@ -8,10 +8,10 @@ spec:
     prefixes:
       - /minio
 ---
-apiVersion: traefik.io/v1alpha1
+apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: minio-console
+  name: minio-api
   namespace: minio
 spec:
   entryPoints:
@@ -20,7 +20,7 @@ spec:
     - match: PathPrefix(`/minio`)
       kind: Rule
       services:
-        - name: minio-console # https://github.com/minio/minio/discussions/16304
+        - name: minio
           port: 9001
       middlewares:
         - name: minio-strip
