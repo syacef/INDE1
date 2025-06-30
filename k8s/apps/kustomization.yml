@@ -17,7 +17,7 @@ configMapGenerator:
       # GENERIC
       - LOG_LEVEL=INFO
       # REDIS
-      - REDIS_HOST=redis-0.redis.redis.svc.cluster.local
+      - REDIS_HOST=rfs-kv.redis.svc.cluster.local
       - REDIS_PORT=6379
       # MINIO
       - S3_ENDPOINT=http://minio-0.minio.minio.svc.cluster.local:9000

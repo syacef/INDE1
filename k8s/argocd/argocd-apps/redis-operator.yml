@@ -24,3 +24,19 @@ spec:
     repoURL: https://spotahome.github.io/redis-operator
     chart: redis-operator
     targetRevision: 3.2.8
+    helm:
+      values: |
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+
+        monitoring:
+          enabled: true
+          serviceMonitor: true
+          serviceAnnotations: {}
+          prometheus:
+            name: redis-operator

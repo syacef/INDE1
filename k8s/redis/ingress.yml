@@ -2,8 +2,10 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: redis-insight-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
-  ingressClassName: "traefik"
+  ingressClassName: traefik
   rules:
   - host: ""
     http:
@@ -14,4 +16,4 @@ spec:
           service:
             name: redis-insight-redisinsight
             port:
-              number: 8001
+              number: 80
