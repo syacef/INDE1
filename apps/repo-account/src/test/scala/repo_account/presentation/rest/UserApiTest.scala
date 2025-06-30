@@ -175,4 +175,4 @@ class UserApiTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach with
     allUsers.head.parkingPlate shouldBe testUser1.parkingPlate
   }
 }
-*/
+ */
