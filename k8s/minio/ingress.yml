@@ -24,3 +24,15 @@ spec:
           port: 9001
       middlewares:
         - name: minio-strip
+    # Dirty fix to allow static files to be served
+    - match: PathPrefix(`/static`)
+      kind: Rule
+      services:
+        - name: minio-console
+          port: 9001
+    - match: PathPrefix(`/styles`)
+      kind: Rule
+      services:
+        - name: minio-console
+          port: 9001
+
