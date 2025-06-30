@@ -45,3 +45,7 @@ spec:
         additionalEnv:
           - name: RI_PROXY_PATH
             value: /redis
+          - name: RI_REDIS_HOST
+            value: rfs-kv.redis.svc.cluster.local
+          - name: RI_REDIS_PORT
+            value: "26379"
