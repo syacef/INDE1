@@ -7,7 +7,7 @@ import srvc_alert.data.model.UserModel
 import srvc_alert.domain.entity.EnvConfig
 
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Try, Using }
+import scala.util.Using
 
 class UserService(implicit ec: ExecutionContext) {
 
@@ -24,14 +24,11 @@ class UserService(implicit ec: ExecutionContext) {
       new JedisPool(EnvConfig.redisHost, EnvConfig.redisPort)
   }
 
-  def getUserByPlate(parkingPlate: String): Future[Option[UserModel]] = Future {
-    Try {
-      val jedis = redisPool.getResource
-      try
-        Option(jedis.get(USER_KEY_PREFIX + parkingPlate)).map(Json.parse(_).as[UserModel])
-      finally
-        jedis.close()
-    }.getOrElse(None)
+  def getUserByPlate(parkingPlate: String): Future[Option[UserModel]] = {
+    val jedis  = redisPool.getResource
+    val result = Option(jedis.get(USER_KEY_PREFIX + parkingPlate)).map(Json.parse(_).as[UserModel])
+    jedis.close()
+    Future.successful(result)
   }
 
   def isUserHandicapped(licensePlate: String): Future[Boolean] =
@@ -40,6 +37,9 @@ class UserService(implicit ec: ExecutionContext) {
       case None =>
         logger.warn(s"License plate $licensePlate not found - treating as non-handicapped")
         false
+    }.recover { case ex: Exception =>
+      logger.error(s"Error checking handicapped status for license plate $licensePlate")
+      false
     }
 
   def healthCheck(): Future[Boolean] = Future {

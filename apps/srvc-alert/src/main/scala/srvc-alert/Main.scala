@@ -38,14 +38,10 @@ Configuration loaded:
           val consumer              = new ParkingEventConsumer(userService, alertEventPublisher)
           val waitForever: IO[Unit] = IO.never
 
-          for {
-            _     <- HealthApi.serveHealthApi(redisPool).useForever.start
-            fiber <- consumer.start().start
-            _     <- waitForever
-            _     <- IO.println("Stopping consumer...")
-            _     <- IO.fromFuture(IO(system.terminate()))
-            _     <- fiber.cancel
-          } yield ()
+          IO.race(
+            HealthApi.serveHealthApi(redisPool).useForever,
+            consumer.start()
+          ).void
         }
     }
 }
