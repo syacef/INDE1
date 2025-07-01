@@ -7,8 +7,8 @@ import io.circe.parser._
 import org.apache.kafka.clients.consumer.{ ConsumerConfig, KafkaConsumer }
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.typelevel.log4cats.Logger
-import srvc_alert.domain.entity.{ EnvConfig, ParkingEvent }
-import srvc_alert.domain.service.{ AlertService, UserService }
+import srvc_alert.domain.entity.{ AlertEvent, EnvConfig, ParkingEvent }
+import srvc_alert.domain.service.{ AlertEventPublisher, UserService }
 
 import java.time.Duration
 import java.util.{ Collections, Properties }
@@ -18,7 +18,7 @@ import scala.concurrent.duration._
 
 class ParkingEventConsumer(
   userService: UserService,
-  alertService: AlertService
+  alertEventPublisher: AlertEventPublisher
 )(implicit logger: Logger[IO], ec: ExecutionContext) {
 
   def start(): IO[Unit] = {
@@ -31,24 +31,22 @@ class ParkingEventConsumer(
     props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, EnvConfig.enableAutoCommit.toString)
 
     val consumer = new KafkaConsumer[String, String](props)
-    consumer.subscribe(Collections.singletonList(EnvConfig.kafkaTopic))
+    consumer.subscribe(Collections.singletonList(EnvConfig.kafkaParkingTopic))
 
     def loop(): IO[Unit] =
       IO.blocking(consumer.poll(Duration.ofMillis(500))).attempt.flatMap {
         case Left(err) =>
-          for {
-            _ <- logger.error(err)("Error while polling Kafka")
-            _ <- IO.sleep(1.second)
-            _ <- loop()
-          } yield ()
+          logger.error(err)("Error while polling Kafka").flatMap { _ =>
+            IO.sleep(1.second).flatMap(_ => loop())
+          }
 
         case Right(records) =>
           records.asScala.toList.traverse_ { record =>
-            for {
-              _ <- logger.debug(s"Received message from partition ${record.partition()}, offset ${record.offset()}")
-              _ <- processMessage(record.key(), record.value())
-            } yield ()
-          } *> loop()
+            logger.debug(s"Received message from partition ${record.partition()}, offset ${record.offset()}").flatMap {
+              _ =>
+                processMessage(record.key(), record.value())
+            }
+          }.flatMap(_ => loop())
       }
 
     loop()
@@ -65,37 +63,40 @@ class ParkingEventConsumer(
     }
 
   private def handleParkingEvent(event: ParkingEvent): IO[Unit] =
-    for {
-      _ <- logger.info(s"Processing parking event: ${event.eventType}")
-      _ <- logger.info(s"Vehicle: ${event.vehicle.licensePlate} (${event.vehicle.vehicleType}, ${event.vehicle.color})")
-      _ <- logger.info(
-        s"Parking: ${event.parking.parkingLotId}/${event.parking.parkingSpotId} (handicapped: ${event.parking.isSlotHandicapped})"
-      )
-      _ <- logger.info(s"Timestamp: ${event.timestamp}")
-      _ <- event.duration.fold(IO.unit)(d => logger.info(s"Duration: $d minutes"))
-
-      isHandicapped <- IO.fromFuture(IO(userService.isUserHandicapped(event.vehicle.licensePlate))).handleErrorWith {
-        err =>
-          for {
-            _ <- logger.error(s"Error checking user status: ${err.getMessage}")
-            _ <- if (event.parking.isSlotHandicapped) handleUnknownUser(event) else IO.unit
-          } yield false
+    logger
+      .info(s"""
+      Processing parking event: ${event.eventType}
+      Vehicle: ${event.vehicle.licensePlate} (${event.vehicle.vehicleType}, ${event.vehicle.color})
+      Parking: ${event.parking.parkingLotId}/${event.parking.parkingSpotId} (handicapped: ${event.parking.isSlotHandicapped})
+      Timestamp: ${event.timestamp}
+    """)
+      .flatMap { _ =>
+        event.duration.fold(IO.unit)(d => logger.info(s"Duration: $d minutes"))
+      }
+      .flatMap { _ =>
+        IO.fromFuture(IO(userService.isUserHandicapped(event.vehicle.licensePlate))).handleErrorWith { err =>
+          logger
+            .error(s"Error checking user status: ${err.getMessage}")
+            .flatMap { _ =>
+              if (event.parking.isSlotHandicapped) handleViolation(event, "unknown_user") else IO.unit
+            }
+            .as(false)
+        }
+      }
+      .flatMap { isHandicapped =>
+        if (!isHandicapped && event.parking.isSlotHandicapped) handleViolation(event, "unauthorized_user")
+        else IO.unit
       }
 
-      _ <-
-        if (!isHandicapped && event.parking.isSlotHandicapped)
-          for {
-            _ <- logger.warn("HANDICAPPED PARKING VIOLATION DETECTED!")
-            _ <- handleParkingViolation(event)
-          } yield ()
-        else IO.unit
-    } yield ()
+  private def handleViolation(event: ParkingEvent, violationType: String): IO[Unit] = {
+    val alertEvent = AlertEvent(
+      vehiclePlate = event.vehicle.licensePlate,
+      spotId = event.parking.parkingSpotId,
+      lotId = event.parking.parkingLotId,
+      violationType = violationType,
+      timestamp = event.timestamp
+    )
 
-  private def handleParkingViolation(event: ParkingEvent): IO[Unit] =
-    IO.fromFuture(IO(alertService.reportHandicappedParkingViolation(event, "unauthorized_user"))) *>
-      logger.info("Violation alert sent to Prometheus")
-
-  private def handleUnknownUser(event: ParkingEvent): IO[Unit] =
-    IO.fromFuture(IO(alertService.reportHandicappedParkingViolation(event, "unknown_user"))) *>
-      logger.info("Unknown user violation alert sent to Prometheus")
+    alertEventPublisher.publish(alertEvent) *> logger.info(s"$violationType violation alert published: $alertEvent")
+  }
 }

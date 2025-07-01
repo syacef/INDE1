@@ -7,6 +7,7 @@ val akkaVersion = "2.6.20"
 val akkaHttpVersion = "10.2.10"
 val kafkaVersion = "4.0.0"
 val circeVersion = "0.14.5"
+val http4sVersion = "0.23.26"
 
 Compile / scalaSource := baseDirectory.value / "src" / "main" / "scala"
 Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources"
@@ -35,6 +36,8 @@ addCommandAlias("lint", "; scalafmtCheck; test:scalafmtCheck; scalafix --check; 
 addCommandAlias("fix", "; scalafmt; test:scalafmt; scalafix; test:scalafix")
 
 assemblyMergeStrategy in assembly := {
+  case PathList("reference.conf") => MergeStrategy.concat
+  case PathList("application.conf") => MergeStrategy.concat
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case x => MergeStrategy.first
 }
@@ -42,6 +45,12 @@ assemblyMergeStrategy in assembly := {
 target := baseDirectory.value / "target"
 
 libraryDependencies ++= Seq(
+    // HTTP4s for HTTP server
+    "org.http4s" %% "http4s-dsl" % http4sVersion,
+    "org.http4s" %% "http4s-ember-server" % http4sVersion,
+    "org.http4s" %% "http4s-circe" % http4sVersion,
+    "org.http4s" %% "http4s-client" % http4sVersion,
+
     // Akka libraries
     "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
     "com.typesafe.akka" %% "akka-stream" % akkaVersion,
@@ -53,6 +62,10 @@ libraryDependencies ++= Seq(
 
     // Prometheus for alerts
     "org.dmonix" %% "prometheus-client-scala" % "1.0.0",
+    "io.prometheus" % "prometheus-metrics-exporter-httpserver" % "1.3.8",
+    "io.prometheus" % "simpleclient_hotspot" % "0.16.0",
+    "io.prometheus" % "simpleclient_httpserver" % "0.16.0",
+    "io.prometheus" % "simpleclient" % "0.16.0",
 
     // Circe for JSON handling
     "io.circe" %% "circe-core" % circeVersion,
@@ -77,7 +90,7 @@ libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.4.14",
     "net.logstash.logback" % "logstash-logback-encoder" % "7.4",
     "org.slf4j" % "slf4j-api" % "2.0.9",
-    
+
     "org.typelevel" %% "log4cats-slf4j" % "2.6.0",
     "org.typelevel" %% "log4cats-core" % "2.6.0",
 
