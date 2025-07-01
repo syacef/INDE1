@@ -16,6 +16,6 @@ spec:
     matchNames:
       - kafka
   endpoints:
-  - targetPort: 9094
+  - targetPort: 9404
     path: /metrics
     interval: 30s
