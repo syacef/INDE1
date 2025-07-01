@@ -5,7 +5,7 @@ metadata:
   name: kafka-exporter
   namespace: kafka
   labels:
-    app: kafka
+    app: kafka-exporter
 spec:
   ports:
     - name: kafka-exporter

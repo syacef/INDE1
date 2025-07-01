@@ -2,8 +2,8 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: kafka-exporter
-  namespace: monitoring
+  name: monitoring
+  namespace: prometheus-operator
   labels:
     app: monitoring
 spec:
@@ -17,4 +17,3 @@ spec:
   - port: http
     path: /metrics
     interval: 30s
-
