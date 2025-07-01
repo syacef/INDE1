@@ -2,26 +2,6 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: kafka-cluster
-  namespace: monitoring
-  labels:
-    app: monitoring
-spec:
-  selector:
-    matchLabels:
-      strimzi.io/cluster: kafka
-      strimzi.io/name: kafka-kafka-bootstrap
-  endpoints:
-  - port: tcp-prometheus
-    path: /metrics
-    interval: 30s
-  namespaceSelector:
-    matchNames:
-    - kafka
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
   name: kafka-exporter
   namespace: monitoring
   labels:
@@ -29,13 +9,12 @@ metadata:
 spec:
   selector:
     matchLabels:
-      strimzi.io/cluster: kafka
-      strimzi.io/component-type: kafka-exporter
-      strimzi.io/name: kafka-kafka-exporter
+      app: kafka-exporter
+  namespaceSelector:
+    matchNames:
+      - kafka
   endpoints:
   - port: http
     path: /metrics
     interval: 30s
-  namespaceSelector:
-    matchNames:
-    - kafka
+
