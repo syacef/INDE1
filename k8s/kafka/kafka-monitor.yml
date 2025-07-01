@@ -3,7 +3,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: kafka-monitor
-  namespace: monitoring
+  namespace: kafka
   labels:
     app: kafka
     type: metrics

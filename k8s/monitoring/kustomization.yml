@@ -1,9 +1,0 @@
----
-kind: Kustomization
-apiVersion: kustomize.config.k8s.io/v1beta1
-resources:
-  - apps-monitor.yml
-  - spark-alerts.yml
-  - spark-monitor.yml
-  - kafka-alerts.yml
-  - kafka-monitor.yml

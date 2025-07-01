@@ -9,6 +9,7 @@ resources:
   # - srvc-io deployed by argocd as chart helm
   - srvc-notifier
   - secrets.yml
+  - pod-monitor.yml
 
 configMapGenerator:
   - name: apps-config

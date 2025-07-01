@@ -3,7 +3,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: apps-monitor
-  namespace: monitoring
+  namespace: apps
   labels:
     app: apps
     type: metrics

@@ -3,7 +3,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  namespace: monitoring
+  namespace: kafka
   name: kafka-alerts
   labels:
     app: kafka
