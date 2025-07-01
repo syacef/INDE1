@@ -2,10 +2,12 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: app-pods-monitor
+  name: apps-monitor
   namespace: monitoring
   labels:
-    app: monitoring
+    app: apps
+    type: metrics
+    release: prometheus-operator
 spec:
   selector:
     matchLabels:

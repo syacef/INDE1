@@ -6,6 +6,7 @@ metadata:
   namespace: monitoring
   labels:
     app: monitoring
+    release: prometheus-operator
 spec:
   selector:
     matchLabels:

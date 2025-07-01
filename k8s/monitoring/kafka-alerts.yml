@@ -5,6 +5,10 @@ kind: PrometheusRule
 metadata:
   namespace: monitoring
   name: kafka-alerts
+  labels:
+    app: kafka
+    type: alerts
+    release: prometheus-operator
 spec:
   groups:
     - name: kafka-alerts

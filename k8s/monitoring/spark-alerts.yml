@@ -5,7 +5,9 @@ metadata:
   name: spark-alerts
   namespace: monitoring
   labels:
-    app: monitoring
+    app: spark
+    type: alerts
+    release: prometheus-operator
 spec:
   groups:
   - name: spark.rules
