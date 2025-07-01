@@ -1,7 +1,7 @@
 include:
   - "ci/srvc-io.yml"
   - "ci/repo-account.yml"
-#  - "ci/srvc-alert.yml"
+  - "ci/srvc-alert.yml"
 #  - "ci/srvc-stats.yml"
 #  - "ci/srvc-notifier.yml"
 
