@@ -55,7 +55,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      strimzi.io/kind: Zookeeper
+      strimzi.io/kind: Kafka
       strimzi.io/name: kafka-zookeeper
   podMetricsEndpoints:
   - targetPort: 9404
