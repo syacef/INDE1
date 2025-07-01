@@ -3,7 +3,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: kafka-monitor
-  namespace: prometheus-operator
+  namespace: monitoring
   labels:
     app: kafka
     type: metrics
@@ -16,6 +16,6 @@ spec:
     matchNames:
       - kafka
   endpoints:
-  - port: http
+  - port: 9094
     path: /metrics
     interval: 30s
