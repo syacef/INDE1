@@ -9,6 +9,7 @@ metadata:
 spec:
   selector:
     matchLabels:
+      strimzi.io/cluster: kafka
       strimzi.io/name: kafka-kafka-bootstrap
   endpoints:
   - port: tcp-prometheus
@@ -28,6 +29,8 @@ metadata:
 spec:
   selector:
     matchLabels:
+      strimzi.io/cluster: kafka
+      strimzi.io/component-type: kafka-exporter
       strimzi.io/name: kafka-kafka-exporter
   endpoints:
   - port: http

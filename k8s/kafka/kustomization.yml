@@ -6,3 +6,4 @@ resources:
   - kafka.yml
   - topics.yml
   - kafka-metrics-cm.yml
+  - kafka-exporter-svc.yml
