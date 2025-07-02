@@ -7,7 +7,7 @@ metadata:
     app: srvc-alert
     type: backends
 spec:
-  replicas: 1 # Number of replicas
+  # replicas: 1 # Managed by HPA
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -23,13 +23,13 @@ spec:
         monitoring: "enabled"
         annotations:
           prometheus.io/scrape: "true"
-          prometheus.io/port: "8080" 
+          prometheus.io/port: "9090" 
     spec:
       imagePullSecrets:
         - name: pull-secret
       containers:
         - name: srvc-alert
-          image: registry.cri.epita.fr/mateo.lelong/inde1/srvc-alert:v0.
+          image: registry.cri.epita.fr/mateo.lelong/inde1/srvc-alert:v0.1.0
           imagePullPolicy: IfNotPresent
           resources:
             requests:
@@ -38,6 +38,11 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+          envFrom:
+            - configMapRef:
+                name: apps-config
+            - secretRef:
+                name: redis-secrets
           livenessProbe:
             httpGet:
               path: /liveness
