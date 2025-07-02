@@ -23,7 +23,7 @@ spec:
         monitoring: "enabled"
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8080" 
+        prometheus.io/port: "9090" 
     spec:
       imagePullSecrets:
         - name: pull-secret
@@ -34,11 +34,6 @@ spec:
           ports:
             - containerPort: 8080
               name: http
-          env:
-            - name: APP_PORT
-              value: "8080"
-            - name: APP_HOST
-              value: "0.0.0.0"
           envFrom:
             - configMapRef:
                 name: apps-config
