@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.{ Format, Json }
-import redis.clients.jedis.{ Jedis, JedisPool }
+import redis.clients.jedis.{ Jedis, JedisSentinelPool }
 import repo_account.data.model.UserModel
 
 import scala.concurrent.ExecutionContext
@@ -33,13 +33,13 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
 
     "getUserByPlate" should {
       "return Some(UserModel) when user exists in Redis" in {
-        val mockJedisPool = mock[JedisPool]
-        val mockJedis     = mock[Jedis]
+        val mockJedisSentinelPool = mock[JedisSentinelPool]
+        val mockJedis             = mock[Jedis]
 
-        when(mockJedisPool.getResource).thenReturn(mockJedis)
+        when(mockJedisSentinelPool.getResource).thenReturn(mockJedis)
         when(mockJedis.get("user:ABC123")).thenReturn(sampleUserJson)
 
-        val userService = new UserService(mockJedisPool)
+        val userService = new UserService(mockJedisSentinelPool)
 
         userService.getUserByPlate("ABC123").map { result =>
           result shouldBe Some(sampleUser)
@@ -49,13 +49,13 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
       }
 
       "return None when user does not exist in Redis" in {
-        val mockJedisPool = mock[JedisPool]
-        val mockJedis     = mock[Jedis]
+        val mockJedisSentinelPool = mock[JedisSentinelPool]
+        val mockJedis             = mock[Jedis]
 
-        when(mockJedisPool.getResource).thenReturn(mockJedis)
+        when(mockJedisSentinelPool.getResource).thenReturn(mockJedis)
         when(mockJedis.get("user:XYZ789")).thenReturn("")
 
-        val userService = new UserService(mockJedisPool)
+        val userService = new UserService(mockJedisSentinelPool)
 
         userService.getUserByPlate("XYZ789").map { result =>
           result shouldBe None
@@ -65,13 +65,13 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
       }
 
       "return None when Redis throws an exception" in {
-        val mockJedisPool = mock[JedisPool]
-        val mockJedis     = mock[Jedis]
+        val mockJedisSentinelPool = mock[JedisSentinelPool]
+        val mockJedis             = mock[Jedis]
 
-        when(mockJedisPool.getResource).thenReturn(mockJedis)
+        when(mockJedisSentinelPool.getResource).thenReturn(mockJedis)
         when(mockJedis.get("user:ERROR")).thenThrow(new RuntimeException("Redis error"))
 
-        val userService = new UserService(mockJedisPool)
+        val userService = new UserService(mockJedisSentinelPool)
 
         userService.getUserByPlate("ERROR").map { result =>
           result shouldBe None
@@ -82,13 +82,13 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
 
       "return None when JSON parsing fails" in {
         // Arrange
-        val mockJedisPool = mock[JedisPool]
-        val mockJedis     = mock[Jedis]
+        val mockJedisSentinelPool = mock[JedisSentinelPool]
+        val mockJedis             = mock[Jedis]
 
-        when(mockJedisPool.getResource).thenReturn(mockJedis)
+        when(mockJedisSentinelPool.getResource).thenReturn(mockJedis)
         when(mockJedis.get("user:INVALID")).thenReturn("invalid json")
 
-        val userService = new UserService(mockJedisPool)
+        val userService = new UserService(mockJedisSentinelPool)
 
         // Act & Assert
         userService.getUserByPlate("INVALID").map { result =>
@@ -101,8 +101,8 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
 
     "getAllUsers" should {
       "return all users when multiple users exist" in {
-        val mockJedisPool = mock[JedisPool]
-        val mockJedis     = mock[Jedis]
+        val mockJedisSentinelPool = mock[JedisSentinelPool]
+        val mockJedis             = mock[Jedis]
 
         val user1     = sampleUser
         val user2     = sampleUser.copy(parkingPlate = "DEF456", firstName = "Jane")
@@ -111,12 +111,12 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
 
         val keys = Set("user:ABC123", "user:DEF456").asJava
 
-        when(mockJedisPool.getResource).thenReturn(mockJedis)
+        when(mockJedisSentinelPool.getResource).thenReturn(mockJedis)
         when(mockJedis.keys("user:*")).thenReturn(keys)
         when(mockJedis.get("user:ABC123")).thenReturn(user1Json)
         when(mockJedis.get("user:DEF456")).thenReturn(user2Json)
 
-        val userService = new UserService(mockJedisPool)
+        val userService = new UserService(mockJedisSentinelPool)
 
         userService.getAllUsers().map { result =>
           result should contain theSameElementsAs Seq(user1, user2)
@@ -126,13 +126,13 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
       }
 
       "return empty sequence when no users exist" in {
-        val mockJedisPool = mock[JedisPool]
-        val mockJedis     = mock[Jedis]
+        val mockJedisSentinelPool = mock[JedisSentinelPool]
+        val mockJedis             = mock[Jedis]
 
-        when(mockJedisPool.getResource).thenReturn(mockJedis)
+        when(mockJedisSentinelPool.getResource).thenReturn(mockJedis)
         when(mockJedis.keys("user:*")).thenReturn(Set.empty[String].asJava)
 
-        val userService = new UserService(mockJedisPool)
+        val userService = new UserService(mockJedisSentinelPool)
 
         userService.getAllUsers().map { result =>
           result shouldBe empty
@@ -142,20 +142,20 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
       }
 
       "filter out users with invalid JSON" in {
-        val mockJedisPool = mock[JedisPool]
-        val mockJedis     = mock[Jedis]
+        val mockJedisSentinelPool = mock[JedisSentinelPool]
+        val mockJedis             = mock[Jedis]
 
         val validUser     = sampleUser
         val validUserJson = Json.toJson(validUser).toString()
 
         val keys = Set("user:ABC123", "user:INVALID").asJava
 
-        when(mockJedisPool.getResource).thenReturn(mockJedis)
+        when(mockJedisSentinelPool.getResource).thenReturn(mockJedis)
         when(mockJedis.keys("user:*")).thenReturn(keys)
         when(mockJedis.get("user:ABC123")).thenReturn(validUserJson)
         when(mockJedis.get("user:INVALID")).thenReturn("invalid json")
 
-        val userService = new UserService(mockJedisPool)
+        val userService = new UserService(mockJedisSentinelPool)
 
         userService.getAllUsers().map { result =>
           result should contain only validUser
@@ -167,13 +167,13 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
 
     "createUser with parkingPlate parameter" should {
       "successfully create user and return the user" in {
-        val mockJedisPool = mock[JedisPool]
-        val mockJedis     = mock[Jedis]
+        val mockJedisSentinelPool = mock[JedisSentinelPool]
+        val mockJedis             = mock[Jedis]
 
-        when(mockJedisPool.getResource).thenReturn(mockJedis)
+        when(mockJedisSentinelPool.getResource).thenReturn(mockJedis)
         when(mockJedis.set("user:ABC123", sampleUserJson)).thenReturn("OK")
 
-        val userService = new UserService(mockJedisPool)
+        val userService = new UserService(mockJedisSentinelPool)
 
         userService.createUser("ABC123", sampleUser).map { result =>
           result shouldBe sampleUser
@@ -186,13 +186,13 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
 
     "createUser with UserModel parameter" should {
       "successfully create user using user's parkingPlate" in {
-        val mockJedisPool = mock[JedisPool]
-        val mockJedis     = mock[Jedis]
+        val mockJedisSentinelPool = mock[JedisSentinelPool]
+        val mockJedis             = mock[Jedis]
 
-        when(mockJedisPool.getResource).thenReturn(mockJedis)
+        when(mockJedisSentinelPool.getResource).thenReturn(mockJedis)
         when(mockJedis.set("user:ABC123", sampleUserJson)).thenReturn("OK")
 
-        val userService = new UserService(mockJedisPool)
+        val userService = new UserService(mockJedisSentinelPool)
 
         userService.createUser(sampleUser).map { result =>
           result shouldBe sampleUser
@@ -205,13 +205,13 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
 
     "getUserById" should {
       "delegate to getUserByPlate with string conversion" in {
-        val mockJedisPool = mock[JedisPool]
-        val mockJedis     = mock[Jedis]
+        val mockJedisSentinelPool = mock[JedisSentinelPool]
+        val mockJedis             = mock[Jedis]
 
-        when(mockJedisPool.getResource).thenReturn(mockJedis)
+        when(mockJedisSentinelPool.getResource).thenReturn(mockJedis)
         when(mockJedis.get("user:123")).thenReturn(sampleUserJson)
 
-        val userService = new UserService(mockJedisPool)
+        val userService = new UserService(mockJedisSentinelPool)
 
         userService.getUserById(123).map { result =>
           result shouldBe Some(sampleUser)
@@ -224,13 +224,13 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
 
     "deleteUser with parkingPlate parameter" should {
       "return true when user is successfully deleted" in {
-        val mockJedisPool = mock[JedisPool]
-        val mockJedis     = mock[Jedis]
+        val mockJedisSentinelPool = mock[JedisSentinelPool]
+        val mockJedis             = mock[Jedis]
 
-        when(mockJedisPool.getResource).thenReturn(mockJedis)
+        when(mockJedisSentinelPool.getResource).thenReturn(mockJedis)
         when(mockJedis.del("user:ABC123")).thenReturn(1L)
 
-        val userService = new UserService(mockJedisPool)
+        val userService = new UserService(mockJedisSentinelPool)
 
         userService.deleteUser("ABC123").map { result =>
           result shouldBe true
@@ -241,13 +241,13 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
       }
 
       "return false when user does not exist" in {
-        val mockJedisPool = mock[JedisPool]
-        val mockJedis     = mock[Jedis]
+        val mockJedisSentinelPool = mock[JedisSentinelPool]
+        val mockJedis             = mock[Jedis]
 
-        when(mockJedisPool.getResource).thenReturn(mockJedis)
+        when(mockJedisSentinelPool.getResource).thenReturn(mockJedis)
         when(mockJedis.del("user:XYZ789")).thenReturn(0L)
 
-        val userService = new UserService(mockJedisPool)
+        val userService = new UserService(mockJedisSentinelPool)
 
         userService.deleteUser("XYZ789").map { result =>
           result shouldBe false
@@ -260,13 +260,13 @@ class UserServiceTest extends AsyncWordSpec with Matchers with MockitoSugar with
 
     "deleteUser with id parameter" should {
       "delegate to deleteUser with string conversion" in {
-        val mockJedisPool = mock[JedisPool]
-        val mockJedis     = mock[Jedis]
+        val mockJedisSentinelPool = mock[JedisSentinelPool]
+        val mockJedis             = mock[Jedis]
 
-        when(mockJedisPool.getResource).thenReturn(mockJedis)
+        when(mockJedisSentinelPool.getResource).thenReturn(mockJedis)
         when(mockJedis.del("user:123")).thenReturn(1L)
 
-        val userService = new UserService(mockJedisPool)
+        val userService = new UserService(mockJedisSentinelPool)
 
         userService.deleteUser(123).map { result =>
           result shouldBe true

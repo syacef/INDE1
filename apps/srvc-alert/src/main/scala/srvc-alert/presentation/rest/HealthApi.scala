@@ -8,12 +8,12 @@ import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 import org.http4s.ember.server._
 import org.http4s.implicits._
-import redis.clients.jedis.JedisPool
+import redis.clients.jedis.JedisSentinelPool
 import srvc_alert.domain.entity.EnvConfig
 
 object HealthApi {
 
-  def serveHealthApi(redisPool: JedisPool): Resource[IO, Unit] = {
+  def serveHealthApi(redisPool: JedisSentinelPool): Resource[IO, Unit] = {
     val routes = HttpRoutes.of[IO] {
       case GET -> Root / "liveness" =>
         IO(redisPool.getResource.ping()).flatMap {

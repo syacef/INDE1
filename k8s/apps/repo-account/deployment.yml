@@ -29,7 +29,7 @@ spec:
         - name: pull-secret
       containers:
         - name: repo-account
-          image: registry.cri.epita.fr/mateo.lelong/inde1/repo-account:v0.1.4
+          image: registry.cri.epita.fr/mateo.lelong/inde1/repo-account:v0.2.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

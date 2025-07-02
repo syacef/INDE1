@@ -5,13 +5,14 @@ import cats.effect.{ IO, IOApp }
 import io.prometheus.client.exporter.HTTPServer
 import io.prometheus.client.hotspot.DefaultExports
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import redis.clients.jedis.JedisPool
+import redis.clients.jedis.JedisSentinelPool
 import srvc_alert.domain.entity.EnvConfig
 import srvc_alert.domain.service.{ AlertEventPublisher, UserService }
 import srvc_alert.presentation.rest.HealthApi
 import srvc_alert.presentation.subscriber.ParkingEventConsumer
 
 import scala.concurrent.ExecutionContext
+import scala.jdk.CollectionConverters._
 
 object Main extends IOApp.Simple {
 
@@ -25,14 +26,15 @@ object Main extends IOApp.Simple {
         new HTTPServer(EnvConfig.prometheusHost, EnvConfig.prometheusPort)
       } *>
         IO.println(s"Prometheus metrics server on http://${EnvConfig.prometheusHost}:${EnvConfig.prometheusPort}") *>
+        IO.println(s"Health API server on http://${EnvConfig.appHost}:${EnvConfig.appPort}") *>
         IO.println(s"""
 Configuration loaded:
   Kafka parking topic: ${EnvConfig.kafkaParkingTopic}
   Kafka alert topic: ${EnvConfig.kafkaAlertTopic}
   Kafka servers: ${EnvConfig.kafkaServers}
   Consumer group: ${EnvConfig.consumerGroupId}
-  Redis: ${EnvConfig.redisHost}:${EnvConfig.redisPort}""") *> {
-          val redisPool             = new JedisPool(EnvConfig.redisHost, EnvConfig.redisPort)
+  Redis Sentinels: ${EnvConfig.redisHosts} (master: ${EnvConfig.redisMasterName})""") *> {
+          val redisPool             = new JedisSentinelPool(EnvConfig.redisMasterName, EnvConfig.redisHosts.asJava)
           val userService           = new UserService()
           val alertEventPublisher   = new AlertEventPublisher()
           val consumer              = new ParkingEventConsumer(userService, alertEventPublisher)
