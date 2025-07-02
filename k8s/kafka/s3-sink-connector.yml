@@ -1,0 +1,56 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  name: s3-sink-connector
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka-connect-cluster
+spec:
+  class: io.confluent.connect.s3.S3SinkConnector
+  tasksMax: 1
+  config:
+    # Kafka topic configuration
+    topics: "parking-event-topic"
+
+    # S3/MinIO connection configuration
+    s3.endpoint: "http://minio-svc.minio.svc.cluster.local:9000"
+    s3.bucket.name: "parking-events"
+    s3.region: "us-east-1"
+    s3.path.style.access.enabled: "true"
+
+    # Authentication - using MinIO credentials
+    s3.access.key.id: "${file:/opt/kafka/external-configuration/minio-secrets/MINIO_ACCESS_KEY}"
+    s3.secret.access.key: "${file:/opt/kafka/external-configuration/minio-secrets/MINIO_SECRET_KEY}"
+
+    # File format and partitioning
+    format.class: "io.confluent.connect.s3.format.json.JsonFormat"
+    partitioner.class: "io.confluent.connect.storage.partitioner.TimeBasedPartitioner"
+    partition.duration.ms: 3600000 # 1 hour partitions
+    path.format: "year=YYYY/month=MM/day=dd/hour=HH"
+    locale: "en"
+    timezone: "UTC"
+
+    # File size and rotation settings to ensure >100MB aggregation
+    flush.size: 100000 # Number of records per file
+    rotate.schedule.interval.ms: 3600000 # Rotate every hour
+    rotate.interval.ms: 900000 # Rotate every 15 minutes as fallback
+
+    # File naming
+    s3.object.tagging: "true"
+    storage.class: "io.confluent.connect.s3.storage.S3Storage"
+
+    # Schema and serialization
+    key.converter: "org.apache.kafka.connect.storage.StringConverter"
+    value.converter: "org.apache.kafka.connect.json.JsonConverter"
+    value.converter.schemas.enable: "false"
+
+    # Error handling
+    errors.tolerance: "all"
+    errors.log.enable: "true"
+    errors.log.include.messages: "true"
+
+    # Compression to optimize storage
+    s3.compression.type: "gzip"
+
+    # Schema compatibility
+    schema.compatibility: "NONE"
