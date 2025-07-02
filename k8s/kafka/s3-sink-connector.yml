@@ -18,10 +18,6 @@ spec:
     s3.region: "us-east-1"
     s3.path.style.access.enabled: "true"
 
-    # Authentication - using MinIO credentials
-    s3.access.key.id: "${file:/opt/kafka/external-configuration/minio-secrets/MINIO_ACCESS_KEY}"
-    s3.secret.access.key: "${file:/opt/kafka/external-configuration/minio-secrets/MINIO_SECRET_KEY}"
-
     # File format and partitioning
     format.class: "io.confluent.connect.s3.format.json.JsonFormat"
     partitioner.class: "io.confluent.connect.storage.partitioner.TimeBasedPartitioner"
