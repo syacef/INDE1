@@ -1,0 +1,66 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: kafka-exporter-monitor
+  namespace: kafka
+  labels:
+    app: kafka
+    type: metrics
+    release: prometheus-operator
+spec:
+  selector:
+    matchLabels:
+      strimzi.io/kind: Kafka
+      strimzi.io/name: kafka-kafka-exporter
+  podMetricsEndpoints:
+  - targetPort: 9404
+    path: /metrics
+    interval: 30s
+  namespaceSelector:
+    matchNames:
+      - kafka
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: kafka-broker-monitor
+  namespace: kafka
+  labels:
+    app: kafka
+    type: metrics
+    release: prometheus-operator
+spec:
+  selector:
+    matchLabels:
+      strimzi.io/kind: Kafka
+      strimzi.io/name: kafka-kafka
+  podMetricsEndpoints:
+  - targetPort: 9404
+    path: /metrics
+    interval: 30s
+  namespaceSelector:
+    matchNames:
+      - kafka
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: kafka-zookeeper-monitor
+  namespace: kafka
+  labels:
+    app: kafka
+    type: metrics
+    release: prometheus-operator
+spec:
+  selector:
+    matchLabels:
+      strimzi.io/kind: Kafka
+      strimzi.io/name: kafka-zookeeper
+  podMetricsEndpoints:
+  - targetPort: 9404
+    path: /metrics
+    interval: 30s
+  namespaceSelector:
+    matchNames:
+      - kafka

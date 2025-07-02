@@ -4,11 +4,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 resources:
   - namespace.yml
   - pull-secrets.yml
+# - srvc-io deployed by argocd as chart helm
   - repo-account
   - srvc-alert
-  # - srvc-io deployed by argocd as chart helm
-  - srvc-notifier
+# - srvc-notifier
   - secrets.yml
+  - pod-monitor.yml
 
 configMapGenerator:
   - name: apps-config
@@ -18,7 +19,20 @@ configMapGenerator:
       - LOG_LEVEL=INFO
       # REDIS
       - REDIS_HOST=rfs-kv.redis.svc.cluster.local
-      - REDIS_PORT=6379
+      - REDIS_PORT=26379
+      - REDIS_DB=0
       # MINIO
-      - S3_ENDPOINT=http://minio-0.minio.minio.svc.cluster.local:9000
+      - S3_ENDPOINT=http://minio-svc.minio.svc.cluster.local:9000
       - S3_BUCKET=default
+      # KAFKA
+      - KAFKA_BOOTSTRAP_SERVERS=kafka-kafka-bootstrap.kafka.svc.cluster.local:9092
+      - KAFKA_PARKING_TOPIC=parking-event-topic
+      - KAFKA_ALERT_TOPIC=alert-event-topic
+      - KAFKA_ENABLE_AUTO_COMMIT=false
+      - KAFKA_AUTO_OFFSET_RESET=earliest
+      # PROMETHEUS
+      - PROMETHEUS_PORT=9090
+      - PROMETHEUS_HOST=0.0.0.0
+      # APP
+      - APP_PORT=8080
+      - APP_HOST=0.0.0.0

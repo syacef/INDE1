@@ -3,9 +3,16 @@ kind: Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 resources:
   - namespace.yml
+
   - kafka.yml
-  - topics.yml
-  - kafka-metrics-cm.yml
+  - kafka-brokers.yml
+  - kafka-controllers.yml
+  - kafka-topics.yml
+
   - kafka-connect.yml
   - s3-sink-connector.yml
+
+  - kafka-metrics-cm.yml
   - minio-secrets.yml
+  - kafka-monitor.yml
+  - kafka-alerts.yml

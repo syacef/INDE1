@@ -20,80 +20,80 @@ spec:
   destination:
     name: in-cluster
     namespace: prometheus-operator
-  source:
-    repoURL: https://prometheus-community.github.io/helm-charts
-    chart: kube-prometheus-stack
-    targetRevision: 75.3.5
-    helm:
-      values: |
-        fullnameOverride: "prometheus"
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 75.3.5
+      helm:
+        values: |
+          fullnameOverride: "prometheus"
 
-        prometheus:
-          enabled: true
-          service:
-            port: 9090
-
-          prometheusSpec:
-            routePrefix: /prometheus
-
-          ingress:
+          prometheus:
             enabled: true
-            ingressClassName: "traefik"
-            hosts:
-              - ""
-            paths:
-              - /prometheus
-            pathType: Prefix
-            servicePort: 9090
-            annotations:
-              traefik.ingress.kubernetes.io/router.entrypoints: web
-            tls: []
+            service:
+              port: 9090
 
-        grafana:
-          enabled: true
-          adminPassword: admin123
-          ingress:
+            prometheusSpec:
+              routePrefix: /prometheus
+
+            ingress:
+              enabled: true
+              ingressClassName: "traefik"
+              hosts:
+                - ""
+              paths:
+                - /prometheus
+              pathType: Prefix
+              servicePort: 9090
+              annotations:
+                traefik.ingress.kubernetes.io/router.entrypoints: web
+              tls: []
+
+          grafana:
             enabled: true
-            ingressClassName: "traefik"
-            path: /grafana
-            pathType: Prefix
-            tls: []
+            adminPassword: admin123
+            ingress:
+              enabled: true
+              ingressClassName: "traefik"
+              path: /grafana
+              pathType: Prefix
+              tls: []
 
-          sidecar:
-            dashboards:
-              enabled: true
-              label: grafana_dashboard
-              labelValue: "1"
-              searchNamespace: ALL
-            datasources:
-              enabled: true
-              defaultDatasourceEnabled: true
-          grafana.ini:
-            server:
-              root_url: "%(protocol)s://%(domain)s/grafana/"
-              serve_from_sub_path: true
-            auth.anonymous:
-              enabled: true
-              org_role: Viewer
-        
-        alertmanager:
-          enabled: true
-          alertmanagerSpec:
-            alertmanagerConfigSelectorNilUsesHelmValues: false
-            storage:
-              volumeClaimTemplate:
-                spec:
-                  storageClassName: local-path
-                  accessModes: ["ReadWriteOnce"]
-                  resources:
-                    requests:
-                      storage: 10Gi
-        
-        kubeStateMetrics:
-          enabled: true
-        
-        nodeExporter:
-          enabled: true
-        
-        prometheusOperator:
-          enabled: true
+            sidecar:
+              dashboards:
+                enabled: true
+                label: grafana_dashboard
+                labelValue: "1"
+                searchNamespace: ALL
+              datasources:
+                enabled: true
+                defaultDatasourceEnabled: true
+            grafana.ini:
+              server:
+                root_url: "%(protocol)s://%(domain)s/grafana/"
+                serve_from_sub_path: true
+              auth.anonymous:
+                enabled: true
+                org_role: Viewer
+          
+          alertmanager:
+            enabled: true
+            alertmanagerSpec:
+              alertmanagerConfigSelectorNilUsesHelmValues: false
+              storage:
+                volumeClaimTemplate:
+                  spec:
+                    storageClassName: local-path
+                    accessModes: ["ReadWriteOnce"]
+                    resources:
+                      requests:
+                        storage: 10Gi
+          
+          kubeStateMetrics:
+            enabled: true
+          
+          nodeExporter:
+            enabled: true
+          
+          prometheusOperator:
+            enabled: true

@@ -2,10 +2,12 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: app-pods-monitor
-  namespace: monitoring
+  name: apps-monitor
+  namespace: apps
   labels:
-    app: monitoring
+    app: apps
+    type: metrics
+    release: prometheus-operator
 spec:
   selector:
     matchLabels:
@@ -13,9 +15,6 @@ spec:
   podMetricsEndpoints:
   - port: metrics
     path: /metrics
-    interval: 30s
-  - port: http
-    path: /actuator/prometheus
     interval: 30s
   namespaceSelector:
     any: true

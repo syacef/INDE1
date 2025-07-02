@@ -4,10 +4,12 @@ kind: Kafka
 metadata:
   name: kafka
   namespace: kafka
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   kafka:
     version: 3.8.0
-    replicas: 1
     resources:
       requests:
         memory: 512Mi
@@ -26,13 +28,13 @@ spec:
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
-      
+
       log.cleaner.dedupe.buffer.size: 134217728
-      
+
       log.retention.hours: 24
       log.retention.bytes: 1073741824
       log.segment.bytes: 104857600
-      
+
       message.max.bytes: 10485760
       replica.fetch.max.bytes: 10485760
 
@@ -96,12 +98,12 @@ spec:
         limits:
           memory: 256Mi
           cpu: 200m
-          
+
   kafkaExporter:
     groupRegex: ".*"
     topicRegex: ".*"
-    logging: info  # Changed from debug
-    enableSaramaLogging: false  # Disabled to reduce logs
+    logging: info
+    enableSaramaLogging: false
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
