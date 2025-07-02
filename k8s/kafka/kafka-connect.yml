@@ -39,7 +39,7 @@ spec:
   build:
     output:
       type: docker
-      image: kafka-connect-s3:latest
+      image: registry.cri.epita.fr/mateo.lelong/inde1/kafka-connect-s3:latest
     plugins:
       - name: confluentinc-kafka-connect-s3
         artifacts:
