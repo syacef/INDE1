@@ -1,0 +1,47 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  name: kafka-connect-cluster
+  namespace: kafka
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+spec:
+  version: 3.8.0
+  replicas: 1
+  bootstrapServers: kafka:9092
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 2Gi
+      cpu: 1
+  storage:
+    type: persistent-claim
+    size: 5Gi
+  config:
+    group.id: kafka-connect-cluster
+    offset.storage.topic: connect-cluster-offsets
+    config.storage.topic: connect-cluster-configs
+    status.storage.topic: connect-cluster-status
+    # Replication factors for a single node Kafka cluster
+    config.storage.replication.factor: 1
+    offset.storage.replication.factor: 1
+    status.storage.replication.factor: 1
+    # Producer configuration for error handling
+    producer.max.request.size: 10485760
+    consumer.max.partition.fetch.bytes: 10485760
+  externalConfiguration:
+    volumes:
+      - name: minio-secrets
+        secret:
+          secretName: minio-secrets
+  build:
+    output:
+      type: docker
+      image: kafka-connect-s3:latest
+    plugins:
+      - name: confluentinc-kafka-connect-s3
+        artifacts:
+          - type: zip
+            url: https://d1i4a15mxbxib1.cloudfront.net/api/plugins/confluentinc/kafka-connect-s3/versions/10.5.13/confluentinc-kafka-connect-s3-10.5.13.zip

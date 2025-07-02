@@ -63,7 +63,7 @@ spec:
             runAsGroup: 1001
             fsGroup: 1001
 
-          defaultBuckets: "datalake,json-data"
+          defaultBuckets: "datalake,json-data,parking-events"
           mode: distributed
 
           ingress:

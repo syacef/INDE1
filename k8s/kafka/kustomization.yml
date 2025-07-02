@@ -6,3 +6,5 @@ resources:
   - kafka.yml
   - topics.yml
   - kafka-metrics-cm.yml
+  - kafka-connect.yml
+  - s3-sink-connector.yml
