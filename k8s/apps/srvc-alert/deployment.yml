@@ -21,9 +21,9 @@ spec:
       labels:
         app: srvc-alert
         monitoring: "enabled"
-        annotations:
-          prometheus.io/scrape: "true"
-          prometheus.io/port: "9090" 
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090" 
     spec:
       imagePullSecrets:
         - name: pull-secret
