@@ -13,14 +13,14 @@ spec:
     topics: "parking-event-topic"
 
     # S3/MinIO connection configuration
-    s3.endpoint: "http://minio.minio.svc.cluster.local:9000"
+    s3.endpoint: "http://minio-svc.minio.svc.cluster.local:9000"
     s3.bucket.name: "parking-events"
     s3.region: "us-east-1"
     s3.path.style.access.enabled: "true"
 
-    # Authentication - using MinIO credentials (not AWS, custom Dockerfile provides these)
-    s3.access.key.id: "${file:/opt/kafka/external-configuration/minio-credentials/MINIO_ACCESS_KEY}"
-    s3.secret.access.key: "${file:/opt/kafka/external-configuration/minio-credentials/MINIO_SECRET_KEY}"
+    # Authentication - using MinIO credentials
+    s3.access.key.id: "${file:/opt/kafka/external-configuration/minio-secrets/MINIO_ACCESS_KEY}"
+    s3.secret.access.key: "${file:/opt/kafka/external-configuration/minio-secrets/MINIO_SECRET_KEY}"
 
     # File format and partitioning
     format.class: "io.confluent.connect.s3.format.json.JsonFormat"
@@ -31,7 +31,7 @@ spec:
     timezone: "UTC"
 
     # File size and rotation settings to ensure >100MB aggregation
-    flush.size: 10000 # Number of records per file
+    flush.size: 100000 # Number of records per file
     rotate.schedule.interval.ms: 3600000 # Rotate every hour
     rotate.interval.ms: 900000 # Rotate every 15 minutes as fallback
 
