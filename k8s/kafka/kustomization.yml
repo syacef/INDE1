@@ -11,6 +11,7 @@ resources:
 
   - kafka-connect.yml
   - s3-sink-connector.yml
+  - registry-secret.yml
 
   - kafka-metrics-cm.yml
   - minio-secrets.yml
