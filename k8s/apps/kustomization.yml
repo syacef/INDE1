@@ -27,7 +27,7 @@ configMapGenerator:
       # KAFKA
       - KAFKA_BOOTSTRAP_SERVERS=kafka-kafka-bootstrap.kafka.svc.cluster.local:9092
       - KAFKA_PARKING_TOPIC=parking-event-topic
-      - KAFKA_ALERTS_TOPIC=alert-event-topic
+      - KAFKA_ALERT_TOPIC=alert-event-topic
       - KAFKA_ENABLE_AUTO_COMMIT=false
       - KAFKA_AUTO_OFFSET_RESET=earliest
       # PROMETHEUS
