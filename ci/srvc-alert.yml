@@ -1,0 +1,86 @@
+.rules_srvc-alert_lint_test:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - "apps/srvc-alert/**/*"
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - "apps/srvc-alert/**/*"
+      when: always
+    - if: '$CI_COMMIT_BRANCH != "main" && $CI_PIPELINE_SOURCE == "push"'
+      changes:
+        - "apps/srvc-alert/**/*"
+      when: always
+    - when: never
+
+.rules_srvc-alert_build:
+  rules:
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^srvc-alert-v.*/'
+      when: always
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - "apps/srvc-alert/**/*"
+      when: manual
+      allow_failure: true
+    - when: never
+
+srvc-alert:lint:
+  extends: .rules_srvc-alert_lint_test
+  image:
+    name: sbtscala/scala-sbt:graalvm-community-24.0.1_1.11.2_3.7.1
+  stage: lint
+  script:
+    - cd apps/srvc-alert
+    - sbt lint
+  cache:
+    key: srvc-alert-sbt-cache-$CI_COMMIT_REF_SLUG
+    paths:
+      - apps/srvc-alert/target/
+      - ~/.sbt/
+      - ~/.coursier/
+
+srvc-alert:test:
+  extends: .rules_srvc-alert_lint_test
+  image:
+    name: sbtscala/scala-sbt:graalvm-community-24.0.1_1.11.2_3.7.1
+  stage: test
+  script:
+    - cd apps/srvc-alert
+    - sbt clean test coverageReport
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: apps/srvc-alert/target/scala-2.13/coverage-report/cobertura.xml
+    expire_in: 1 week
+  cache:
+    key: srvc-alert-sbt-cache-$CI_COMMIT_REF_SLUG
+    paths:
+      - apps/srvc-alert/target/
+      - ~/.sbt/
+      - ~/.coursier/
+  coverage: '/Total coverage: (\d+\.\d+)%/'
+
+srvc-alert:build:
+  extends: .rules_srvc-alert_build
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.2-debug
+    entrypoint: [""]
+  stage: build
+  variables:
+    DOCKER_REGISTRY: $CI_REGISTRY
+    DOCKER_IMAGE: $CI_REGISTRY/srvc-alert
+  before_script:
+    - echo "Building Docker image for tag $CI_COMMIT_TAG"
+    - export DOCKER_TAG=${CI_COMMIT_TAG#"srvc-alert-"}
+    - echo "Extracted Docker tag ${DOCKER_TAG}"
+    - echo "{\"auths\":{\"$DOCKER_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
+  script:
+    - /kaniko/executor
+      --context apps/srvc-alert
+      --dockerfile Dockerfile
+      --destination $DOCKER_IMAGE:$DOCKER_TAG
+      --destination $DOCKER_IMAGE:latest
+      --cache=true
+      --cache-ttl=24h
