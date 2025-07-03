@@ -8,18 +8,21 @@ import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 import org.http4s.ember.server._
 import org.http4s.implicits._
-import redis.clients.jedis.JedisPool
+import redis.clients.jedis.JedisSentinelPool
 import repo_account.data.model.UserModel
-import repo_account.domain.entities.EnvConfig
+import repo_account.domain.entity.EnvConfig
 import repo_account.domain.service.UserService
 
 import scala.concurrent.ExecutionContext
+import scala.jdk.CollectionConverters._
 
 object UserApi extends IOApp {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
 
-  val redisPool   = new JedisPool(EnvConfig.redisHost, EnvConfig.redisPort)
+  val sentinels   = EnvConfig.redisHosts.asJava
+  val masterName  = EnvConfig.redisMasterName
+  val redisPool   = new JedisSentinelPool(masterName, sentinels)
   val userService = UserService(redisPool)
 
   val routes = HttpRoutes.of[IO] {
