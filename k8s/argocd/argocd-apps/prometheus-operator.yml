@@ -52,11 +52,8 @@ spec:
             ingress:
               enabled: true
               ingressClassName: "traefik"
-              path: /
-              hosts:
-                - "grafana.localhost"
-              annotations:
-                traefik.ingress.kubernetes.io/router.entrypoints: web
+              path: /grafana
+              pathType: Prefix
               tls: []
 
             sidecar:
