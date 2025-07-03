@@ -41,7 +41,7 @@ object Main extends App {
     .filter(_.endsWith(".json.gz"))
     .toList
 
-  // Print the format of each file
+  // Print the format of each file (debugging purpose)
   val mapper = new ObjectMapper()
   def printSchema(node: JsonNode, indent: String = ""): Unit = {
     val fields = node.fieldNames()
@@ -72,7 +72,7 @@ object Main extends App {
   try {
     // For each files
     gzippedFiles.foreach { objectPath =>
-      println(s"\n Processing file : $objectPath")
+      println(s"Processing file: $objectPath")
       try {
         val stream = minioClient.getObject(
           GetObjectArgs.builder()
@@ -84,32 +84,22 @@ object Main extends App {
         val gzipStream = new GZIPInputStream(stream)
         val jsonLines = Source.fromInputStream(gzipStream).getLines()
 
-        var fileObjectCount = 0
         jsonLines.foreach { line =>
           if (line.trim.nonEmpty) {
             try {
               val jsonNode = mapper.readTree(line)
               allJsonObjects += jsonNode
-              fileObjectCount += 1
               totalProcessed += 1
             } catch {
               case e: Exception =>
-                println(s"Error jsonlLines.foreach : ${e.getMessage}")
+                println(s"Error parsing line: ${e.getMessage}")
             }
           }
         }
 
-        println(s"$fileObjectCount JSON objects in objectPath")
-
-        // Print schema for the first object of each file (optional)
-        if (fileObjectCount > 0) {
-          println("📋 Schema for first object in this file:")
-          printSchema(allJsonObjects.last)
-        }
-
       } catch {
         case e: Exception =>
-          println(s"❌ Failed to process $objectPath: ${e.getMessage}")
+          println(s"Failed to process $objectPath: ${e.getMessage}")
       }
     }
 
@@ -134,12 +124,12 @@ object Main extends App {
         
         redis.set(redisKey, finalJsonArray)
         
-        println(s"\n ✅ Uploaded to Redis with key: $redisKey")
-        println(s"Total files concatenated: ${gzippedFiles.length}")
+        println(s"Uploaded to Redis with key: $redisKey")
+        println(s"Total files processed: ${gzippedFiles.length}")
         
       } catch {
         case e: Exception =>
-          println(s"❌ Failed to upload to Redis: ${e.getMessage}")
+          println(s"Failed to upload to Redis: ${e.getMessage}")
       }
     } else {
       println("No JSON objects found to upload")
@@ -148,6 +138,5 @@ object Main extends App {
   } finally {
     // Close Redis connection
     redis.close()
-    println("Redis connection closed")
   }
 }
