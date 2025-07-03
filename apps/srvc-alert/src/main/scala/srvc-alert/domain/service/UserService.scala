@@ -2,11 +2,12 @@ package srvc_alert.domain.service
 
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
-import redis.clients.jedis.JedisPool
+import redis.clients.jedis.JedisSentinelPool
 import srvc_alert.data.model.UserModel
 import srvc_alert.domain.entity.EnvConfig
 
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.jdk.CollectionConverters._
 import scala.util.Using
 
 class UserService(implicit ec: ExecutionContext) {
@@ -14,19 +15,15 @@ class UserService(implicit ec: ExecutionContext) {
   private val logger = LoggerFactory.getLogger(getClass)
 
   implicit val userFormat: Format[UserModel] = Json.format[UserModel]
-  private val USER_KEY_PREFIX                = "user:"
 
-  private val redisPool = EnvConfig.redisPassword match {
-    case Some(password) =>
-      val uri = s"redis://:$password@${EnvConfig.redisHost}:${EnvConfig.redisPort}/${EnvConfig.redisDb}"
-      new JedisPool(uri)
-    case None =>
-      new JedisPool(EnvConfig.redisHost, EnvConfig.redisPort)
-  }
+  private val redisPool = new JedisSentinelPool(
+    EnvConfig.redisMasterName,
+    EnvConfig.redisHosts.asJava
+  )
 
   def getUserByPlate(parkingPlate: String): Future[Option[UserModel]] = {
     val jedis  = redisPool.getResource
-    val result = Option(jedis.get(USER_KEY_PREFIX + parkingPlate)).map(Json.parse(_).as[UserModel])
+    val result = Option(jedis.get(EnvConfig.userKeyPrefix + parkingPlate)).map(Json.parse(_).as[UserModel])
     jedis.close()
     Future.successful(result)
   }

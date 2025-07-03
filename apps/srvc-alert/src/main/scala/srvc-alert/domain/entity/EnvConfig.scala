@@ -25,8 +25,8 @@ object EnvConfig {
   val enableAutoCommit: Boolean = dotenv.get("KAFKA_ENABLE_AUTO_COMMIT", "true").toBoolean
 
   // Redis
-  val redisHost: String             = dotenv.get("REDIS_HOST", "localhost")
-  val redisPort: Int                = dotenv.get("REDIS_PORT", "6379").toInt
-  val redisDb: Int                  = dotenv.get("REDIS_DB", "0").toInt
+  val redisHosts: Set[String]       = dotenv.get("REDIS_HOSTS", "localhost:6379").split(",").map(_.trim).toSet
+  val redisMasterName: String       = dotenv.get("REDIS_MASTER_NAME", "")
   val redisPassword: Option[String] = Option(dotenv.get("REDIS_PASSWORD")).filter(_.nonEmpty)
+  val userKeyPrefix: String         = dotenv.get("REDIS_USER_KEY_PREFIX", "user:")
 }

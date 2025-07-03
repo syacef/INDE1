@@ -16,7 +16,6 @@ Scala app producing alert when handicaped slot is used by non authorized users
 | `consumerGroupId`   | `KAFKA_CONSUMER_GROUP_ID`  | `"parking-event-consumer"` | `String`         |
 | `autoOffsetReset`   | `KAFKA_AUTO_OFFSET_RESET`  | `"earliest"`               | `String`         |
 | `enableAutoCommit`  | `KAFKA_ENABLE_AUTO_COMMIT` | `"true"`                   | `Boolean`        |
-| `redisHost`         | `REDIS_HOST`               | `"localhost"`              | `String`         |
-| `redisPort`         | `REDIS_PORT`               | `"6379"`                   | `Int`            |
-| `redisDb`           | `REDIS_DB`                 | `"0"`                      | `Int`            |
+| `redisHosts`        | `REDIS_HOST`               | `"localhost"`              | `String`         |
+| `redisMasterName`   | `REDIS_MASTER_NAME`        | `""`                       | `String`         |
 | `redisPassword`     | `REDIS_PASSWORD`           | `null`                     | `Option[String]` |
