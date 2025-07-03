@@ -7,23 +7,22 @@ import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ListBuffer
 import redis.clients.jedis.Jedis
+import redis.clients.jedis.Protocol
+import redis.clients.jedis.commands.ProtocolCommand
+import redis.clients.jedis.util.SafeEncoder
 
 object Main extends App {
 
-  // Format : Year-Month-Day
   val Date_param = "2025-07-03"
   val Array(year, month, day) = Date_param.split("-")
 
-  // Minio Client
   val minioClient = MinioClient.builder()
     .endpoint("http://localhost:9000")
     .credentials("minio", "minio123")
     .build()
 
-  // Redis Client
   val redis = new Jedis("localhost", 6379)
 
-  // Get the files from minio on the specified date
   val bucketName = "parking-events"
   val prefix = s"topics/parking-event-topic/$year/$month/$day/"
   val objects = minioClient.listObjects(
@@ -41,7 +40,6 @@ object Main extends App {
     .filter(_.endsWith(".json.gz"))
     .toList
 
-  // Print the format of each file (debugging purpose)
   val mapper = new ObjectMapper()
   def printSchema(node: JsonNode, indent: String = ""): Unit = {
     val fields = node.fieldNames()
@@ -69,8 +67,11 @@ object Main extends App {
   val allJsonObjects = ListBuffer[JsonNode]()
   var totalProcessed = 0
 
+  object JsonSetCommand extends ProtocolCommand {
+    override def getRaw: Array[Byte] = SafeEncoder.encode("JSON.SET")
+  }
+
   try {
-    // For each files
     gzippedFiles.foreach { objectPath =>
       println(s"Processing file: $objectPath")
       try {
@@ -103,12 +104,10 @@ object Main extends App {
       }
     }
 
-    // Upload to Redis
     val redisKey = s"parking-events:$Date_param"
     
     if (allJsonObjects.nonEmpty) {
       try {
-        // Create JSON array string
         val jsonArrayBuilder = new StringBuilder()
         jsonArrayBuilder.append("[\n")
         allJsonObjects.zipWithIndex.foreach { case (jsonNode, index) =>
@@ -122,7 +121,7 @@ object Main extends App {
         
         val finalJsonArray = jsonArrayBuilder.toString()
         
-        redis.set(redisKey, finalJsonArray)
+        redis.sendCommand(JsonSetCommand, redisKey, ".", finalJsonArray)
         
         println(s"Uploaded to Redis with key: $redisKey")
         println(s"Total files processed: ${gzippedFiles.length}")
@@ -136,7 +135,6 @@ object Main extends App {
     }
     
   } finally {
-    // Close Redis connection
     redis.close()
   }
 }
