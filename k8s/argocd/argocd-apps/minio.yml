@@ -72,8 +72,20 @@ spec:
           runAsGroup: 1001
           fsGroup: 1001
 
-        defaultBuckets: "datalake,json-data,parking-events"
+        # https://artifacthub.io/packages/helm/bitnami/minio?modal=values&path=defaultBuckets
+        # defaultBuckets: "datalake,json-data,parking-events" this is standalone only 
         mode: distributed
+
+        buckets:
+          - name: parking-events
+            policy: none
+            purge: false
+          - name: datalake
+            policy: none
+            purge: false
+          - name: json-data
+            policy: none
+            purge: false
 
         ingress:
           enabled: false
