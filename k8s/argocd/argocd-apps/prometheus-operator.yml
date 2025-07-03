@@ -49,7 +49,7 @@ spec:
           grafana:
             enabled: true
             adminPassword: admin123
-             persistence:
+            persistence:
               enabled: true
               accessModes: [“ReadWriteOnce”]
               size: 5Gi
@@ -68,6 +68,8 @@ spec:
                 folderAnnotation: grafana_folder
                 labelValue: "1"
                 searchNamespace: ALL
+                annotations: 
+                  grafana_dashboard: "1"
                 provider: 
                   allowUiUpdates: true
                   foldersFromFilesStructure: true
@@ -100,3 +102,7 @@ spec:
 
           prometheusOperator:
             enabled: true
+
+    - repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
+      targetRevision: HEAD
+      path: k8s/grafana
