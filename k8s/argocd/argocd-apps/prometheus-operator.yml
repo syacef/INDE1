@@ -51,7 +51,7 @@ spec:
             adminPassword: admin123
             persistence:
               enabled: true
-              accessModes: [“ReadWriteOnce”]
+              accessModes: ["ReadWriteOnce"]
               size: 5Gi
             ingress:
               enabled: true
