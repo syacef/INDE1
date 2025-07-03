@@ -33,9 +33,6 @@ spec:
             service:
               port: 9090
 
-            #prometheusSpec:
-            #  routePrefix: /prometheus
-
             ingress:
               enabled: true
               ingressClassName: "traefik"
@@ -58,6 +55,8 @@ spec:
               path: /
               hosts:
                 - "grafana.localhost"
+              annotations:
+                traefik.ingress.kubernetes.io/router.entrypoints: web
               tls: []
 
             sidecar:
