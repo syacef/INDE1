@@ -20,7 +20,7 @@ configMapGenerator:
       # REDIS
       - REDIS_HOSTS=rfs-kv.redis.svc.cluster.local:26379
       - REDIS_MASTER_NAME=mymaster
-      - REDIS_USER_KEY_PREFIX=user:
+      - REDIS_USER_KEY_PREFIX="user:"
       # MINIO
       - S3_ENDPOINT=http://minio-svc.minio.svc.cluster.local:9000
       - S3_BUCKET=default
