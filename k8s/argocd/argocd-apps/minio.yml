@@ -97,6 +97,12 @@ spec:
             hosts:
               - minio.localhost
 
+          metrics:
+            serviceMonitor:
+              includeNode: true
+              enabled: true
+              namespace: minio
+
     - repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
       targetRevision: HEAD
       path: k8s/minio
