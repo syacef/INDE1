@@ -8,7 +8,7 @@ metadata:
 spec:
   class: io.confluent.connect.s3.S3SinkConnector
   tasksMax: 1
-  config:
+  config: # https://docs.confluent.io/kafka-connectors/s3-sink/current/configuration_options.html#s3-configuration-options
     # Kafka topic configuration
     topics: "parking-event-topic"
 
@@ -16,7 +16,7 @@ spec:
     output.data.format: JSON
 
     # S3/MinIO connection configuration
-    s3.endpoint: "http://minio-svc.minio.svc.cluster.local:9000"
+    store.url: "http://minio-svc.minio.svc.cluster.local:9000"
     s3.bucket.name: "parking-events"
     s3.region: "us-east-2"
     s3.path.style.access.enabled: "true"
