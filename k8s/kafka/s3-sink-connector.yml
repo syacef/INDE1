@@ -26,7 +26,7 @@ spec:
     partitioner.class: "io.confluent.connect.storage.partitioner.TimeBasedPartitioner"
     partition.duration.ms: 3600000 # 1 hour partitions
     time.interval: DAILY
-    #path.format: "year=yyyy/month=MM/day=dd/hour=HH"
+    path.format: "yyyy/MM/dd/HH/mm"
 
     locale: "en"
     timezone: "UTC"
