@@ -108,4 +108,4 @@ spec:
       path: k8s/grafana
       helm:
         releaseName: grafana-dashboards
-        values: {}
+        values: ""
