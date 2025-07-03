@@ -10,14 +10,19 @@ Test / resourceDirectory := baseDirectory.value / "src" / "test" / "resources"
 target := baseDirectory.value / "target"
 
 libraryDependencies ++= Seq(
-    "com.typesafe.slick" %% "slick" % "3.4.1",
-    "com.typesafe.slick" %% "slick-hikaricp" % "3.4.1",
+  "com.typesafe.slick" %% "slick" % "3.4.1",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.4.1",
+  "org.postgresql" % "postgresql" % "42.6.0",
+  "com.typesafe" % "config" % "1.4.2",
+  "ch.qos.logback" % "logback-classic" % "1.4.11",
 
-    "org.postgresql" % "postgresql" % "42.6.0",
+  "org.scalatest" %% "scalatest" % "3.2.17" % Test,
 
-    "com.typesafe" % "config" % "1.4.2",
+  "io.minio" % "minio" % "8.5.7",
 
-    "ch.qos.logback" % "logback-classic" % "1.4.11",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.15.2",
 
-    "org.scalatest" %% "scalatest" % "3.2.17" % Test
+  "org.apache.commons" % "commons-compress" % "1.24.0",
+
+  "redis.clients" % "jedis" % "5.1.0"
 )
