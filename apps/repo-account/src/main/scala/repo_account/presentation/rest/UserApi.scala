@@ -53,8 +53,9 @@ object UserApi extends IOApp {
 
     case req @ POST -> Root / "account" / "tmp" =>
       req.as[UserModel].flatMap { user =>
-        IO.fromFuture(IO(userService.createTemporaryUser(user, EnvConfig.temporaryAccountExpiration))).flatMap { tempUser =>
-          Created(tempUser.asJson)
+        IO.fromFuture(IO(userService.createTemporaryUser(user, EnvConfig.temporaryAccountExpiration))).flatMap {
+          tempUser =>
+            Created(tempUser.asJson)
         }
       }
 
