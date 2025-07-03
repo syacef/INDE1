@@ -33,8 +33,8 @@ spec:
 
     # File size and rotation settings to ensure >100MB aggregation
     flush.size: 100000 # Number of records per file
-    rotate.schedule.interval.ms: 3600000 # Rotate every hour
-    rotate.interval.ms: 900000 # Rotate every 15 minutes as fallback
+    rotate.schedule.interval.ms: 86400000 # Rotate every day
+    rotate.interval.ms: 86400000 # Rotate every day
 
     # File naming
     s3.object.tagging: "true"
