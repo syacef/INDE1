@@ -33,16 +33,16 @@ spec:
             service:
               port: 9090
 
-            prometheusSpec:
-              routePrefix: /prometheus
+            #prometheusSpec:
+            #  routePrefix: /prometheus
 
             ingress:
               enabled: true
               ingressClassName: "traefik"
               hosts:
-                - ""
+                - "prometheus.localhost"
               paths:
-                - /prometheus
+                - /
               pathType: Prefix
               servicePort: 9090
               annotations:
@@ -55,8 +55,9 @@ spec:
             ingress:
               enabled: true
               ingressClassName: "traefik"
-              path: /grafana
-              pathType: Prefix
+              path: /
+              hosts:
+                - "grafana.localhost"
               tls: []
 
             sidecar:
@@ -75,7 +76,7 @@ spec:
               auth.anonymous:
                 enabled: true
                 org_role: Viewer
-          
+
           alertmanager:
             enabled: true
             alertmanagerSpec:
@@ -88,12 +89,12 @@ spec:
                     resources:
                       requests:
                         storage: 10Gi
-          
+
           kubeStateMetrics:
             enabled: true
-          
+
           nodeExporter:
             enabled: true
-          
+
           prometheusOperator:
             enabled: true

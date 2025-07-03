@@ -8,10 +8,10 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-  - host: ""
+  - host: "redis.localhost"
     http:
       paths:
-      - path: /redis
+      - path: /
         pathType: Prefix
         backend:
           service:

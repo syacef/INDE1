@@ -22,7 +22,6 @@ spec:
     onSubmissionFailureRetryInterval: 20
   timeToLiveSeconds: 1800
   sparkConf:
-    "spark.ui.proxyBase": "/spark/srvc-stats"
     "spark.executor.instances": "1"
     "spark.kubernetes.executor.deleteOnTermination": "true"
     "spark.kubernetes.driver.deleteOnTermination": "true"

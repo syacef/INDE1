@@ -21,56 +21,66 @@ spec:
   destination:
     name: in-cluster
     namespace: minio
-  sources:
-    - repoURL: https://charts.min.io/
-      chart: minio
-      targetRevision: 5.4.0
-      helm:
-        releaseName: minio
-        values: |
-          auth:
-            rootUser: admin
-            rootPassword: minio123456
+  source:
+    repoURL: https://charts.min.io/
+    chart: minio
+    targetRevision: 5.4.0
+    helm:
+      releaseName: minio
+      values: |
+        auth:
+          rootUser: admin
+          rootPassword: minio123456
+        
+        users:
+          - accessKey: console
+            secretKey: console123
+            policy: consoleAdmin
 
-          persistence:
-            enabled: true
-            size: 20Gi
-            storageClass: local-path
+          - accessKey: minio
+            secretKey: minio123
+            policy: consoleAdmin
 
-          replicas: 4
-          drivesPerNode: 1
+        persistence:
+          enabled: true
+          size: 20Gi
+          storageClass: local-path
 
-          minioAPIPort: 9000
-          minioConsolePort: 9001
-          service:
-            type: ClusterIP
-            port: 9000
-          consoleService:
-            type: ClusterIP
-            port: 9001
+        replicas: 4
+        drivesPerNode: 1
 
-          resources:
-            requests:
-              memory: 256Mi
-              cpu: 100m
-            limits:
-              memory: 1Gi
-              cpu: 500m
+        minioAPIPort: 9000
+        minioConsolePort: 9001
+        service:
+          type: ClusterIP
+          port: 9000
+        consoleService:
+          type: ClusterIP
+          port: 9001
 
-          securityContext:
-            enabled: true
-            runAsUser: 1001
-            runAsGroup: 1001
-            fsGroup: 1001
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+          limits:
+            memory: 1Gi
+            cpu: 500m
 
-          defaultBuckets: "datalake,json-data,parking-events"
-          mode: distributed
+        securityContext:
+          enabled: true
+          runAsUser: 1001
+          runAsGroup: 1001
+          fsGroup: 1001
 
-          ingress:
-            enabled: false
-          consoleIngress:
-            enabled: false
+        defaultBuckets: "datalake,json-data,parking-events"
+        mode: distributed
 
-    - repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
-      path: k8s/minio
-      targetRevision: HEAD
+        ingress:
+          enabled: false
+
+        consoleIngress:
+          enabled: true
+          ingressClassName: traefik
+          path: /
+          hosts:
+            - minio.localhost

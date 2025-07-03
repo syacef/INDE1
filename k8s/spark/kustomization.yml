@@ -4,4 +4,5 @@ kind: Kustomization
 resources:
   - namespace.yml
   - srvc-stats
-  # - spark-history
+  - spark-alerts.yml
+  - spark-monitor.yml

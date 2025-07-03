@@ -10,8 +10,9 @@ metadata:
 spec:
   rules:
     - http:
+        host: "srvc-stats.localhost"
         paths:
-          - path: /spark/srvc-stats
+          - path: /
             pathType: Prefix
             backend:
               service:
