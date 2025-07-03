@@ -70,6 +70,7 @@ spec:
             enabled: false
           consoleIngress:
             enabled: false
+
     - repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
       path: k8s/minio
       targetRevision: HEAD
