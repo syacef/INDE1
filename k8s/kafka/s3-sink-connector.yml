@@ -18,7 +18,7 @@ spec:
     # S3/MinIO connection configuration
     s3.endpoint: "http://minio-svc.minio.svc.cluster.local:9000"
     s3.bucket.name: "parking-events"
-    s3.region: "us-east-1"
+    s3.region: "us-east-2"
     s3.path.style.access.enabled: "true"
 
     # File format and partitioning
