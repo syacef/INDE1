@@ -52,7 +52,7 @@ spec:
   build:
     output:
       type: docker
-      image: registry.cri.epita.fr/mateo.lelong/inde1/kafka-connect-s3:latest
+      image: registry.cri.epita.fr/mateo.lelong/inde1/kafka-connect-s3:v0.1.0
       pushSecret: registry-secret
     plugins:
       - name: confluentinc-kafka-connect-s3
