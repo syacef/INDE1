@@ -29,7 +29,7 @@ spec:
         - name: pull-secret
       containers:
         - name: srvc-alert
-          image: registry.cri.epita.fr/mateo.lelong/inde1/srvc-alert:v0.2.0
+          image: registry.cri.epita.fr/mateo.lelong/inde1/srvc-alert:v0.2.1
           imagePullPolicy: IfNotPresent
           resources:
             requests:

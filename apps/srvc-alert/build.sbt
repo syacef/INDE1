@@ -1,5 +1,5 @@
 name := "srvc-alert"
-version := "0.2.0"
+version := "0.2.1"
 
 scalaVersion := "2.13.16"
 
@@ -35,9 +35,17 @@ Test / fork := true
 addCommandAlias("lint", "; scalafmtCheck; test:scalafmtCheck; scalafix --check; test:scalafix --check")
 addCommandAlias("fix", "; scalafmt; test:scalafmt; scalafix; test:scalafix")
 
-assemblyMergeStrategy in assembly := {
+assembly/assemblyMergeStrategy := {
   case PathList("reference.conf") => MergeStrategy.concat
   case PathList("application.conf") => MergeStrategy.concat
+  case PathList("META-INF", "services", xs @ _*) => MergeStrategy.concat
+  case PathList("META-INF", "maven", xs @ _*) => MergeStrategy.discard
+  case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+  case PathList("META-INF", "DEPENDENCIES") => MergeStrategy.discard
+  case PathList("META-INF", "LICENSE") => MergeStrategy.discard
+  case PathList("META-INF", "LICENSE.txt") => MergeStrategy.discard
+  case PathList("META-INF", "NOTICE") => MergeStrategy.discard
+  case PathList("META-INF", "NOTICE.txt") => MergeStrategy.discard
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case x => MergeStrategy.first
 }
