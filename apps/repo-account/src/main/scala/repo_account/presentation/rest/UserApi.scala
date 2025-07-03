@@ -3,6 +3,8 @@ package repo_account.presentation.rest
 import cats.effect._
 import com.comcast.ip4s._
 import io.circe.syntax._
+import io.prometheus.client.exporter.HTTPServer
+import io.prometheus.client.hotspot.DefaultExports
 import org.http4s._
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
@@ -36,11 +38,25 @@ object UserApi extends IOApp {
       }
 
     case req @ POST -> Root / "account" =>
-      for {
-        user  <- req.as[UserModel]
-        saved <- IO.fromFuture(IO(userService.createUser(user)))
-        res   <- Created(saved.asJson)
-      } yield res
+      req.as[UserModel].flatMap { user =>
+        IO.fromFuture(IO(userService.createUser(user))).flatMap { saved =>
+          Created(saved.asJson)
+        }
+      }
+
+    case req @ POST -> Root / "account" / "bulk" =>
+      req.as[List[UserModel]].flatMap { users =>
+        IO.fromFuture(IO(userService.createUsers(users))).flatMap { savedUsers =>
+          Created(savedUsers.asJson)
+        }
+      }
+
+    case req @ POST -> Root / "account" / "tmp" =>
+      req.as[UserModel].flatMap { user =>
+        IO.fromFuture(IO(userService.createTemporaryUser(user, EnvConfig.temporaryAccountExpiration))).flatMap { tempUser =>
+          Created(tempUser.asJson)
+        }
+      }
 
     case DELETE -> Root / "account" / IntVar(id) =>
       IO.fromFuture(IO(userService.deleteUser(id))).flatMap {
@@ -50,13 +66,13 @@ object UserApi extends IOApp {
 
     case GET -> Root / "liveness" =>
       redisPool.getResource.ping() match {
-        case "PONG" => Ok("Service is ready")
+        case "PONG" => Ok("Alive")
         case _      => InternalServerError("Redis connection failed")
       }
 
     case GET -> Root / "readiness" =>
       redisPool.getResource.ping() match {
-        case "PONG" => Ok("Service is ready")
+        case "PONG" => Ok("Ready")
         case _      => InternalServerError("Redis connection failed")
       }
   }
@@ -67,7 +83,12 @@ object UserApi extends IOApp {
     val host = Host.fromString(EnvConfig.appHost).getOrElse(ipv4"0.0.0.0")
     val port = Port.fromInt(EnvConfig.appPort).getOrElse(port"8080")
 
-    EmberServerBuilder
+    val startMetrics = IO {
+      DefaultExports.initialize()
+      new HTTPServer(EnvConfig.prometheusHost, EnvConfig.prometheusPort, true)
+    }
+
+    startMetrics *> EmberServerBuilder
       .default[IO]
       .withHost(host)
       .withPort(port)
