@@ -4,6 +4,7 @@ metadata:
   name: kafka-connect-cluster
   namespace: kafka
   annotations:
+    strimzi.io/force-rebuild: "true"
     strimzi.io/use-connector-resources: "true"
 spec:
   version: 3.8.0
