@@ -7,4 +7,4 @@ metadata:
     grafana_dashboard: "1"
 data:
   minio.json: |
-{{ .Files.Get "minio.json" | indent 4 }}
+{{ .Files.Get "dashboards/minio.json" | indent 4 }}
