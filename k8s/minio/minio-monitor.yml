@@ -1,0 +1,22 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: minio-monitor
+  namespace: minio
+  labels:
+    app: minio
+    type: metrics
+    release: prometheus-operator
+spec:
+  selector:
+    matchLabels:
+      app: minio
+      release: minio
+  podMetricsEndpoints:
+  - targetPort: 9000
+    path: /export
+    interval: 30s
+  namespaceSelector:
+    matchNames:
+      - minio
