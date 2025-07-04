@@ -5,7 +5,10 @@ import io.github.cdimascio.dotenv.Dotenv
 object EnvConfig {
   private val dotenv = Dotenv.configure().ignoreIfMissing().load()
 
-  val eventsPerSecond: Int     = dotenv.get("EVENTS_PER_SECOND", "10").toInt
+  val eventsPerSecond: Int                  = dotenv.get("EVENTS_PER_SECOND", "10").toInt
+  val parkingPlatePattern: String           = dotenv.get("PARKING_PLATE_PATTERN", "aa-ddd-aa")
+  val parkingPlateRandomProbability: Double = dotenv.get("PARKING_PLATE_RANDOM_PROBABILITY", "0.5").toDouble
+
   val parkingLots: Seq[String] = dotenv.get("PARKING_LOTS", "lot-01,lot-02").split(",").toSeq
   val parkingSlots: Seq[Seq[Int]] = dotenv
     .get("PARKING_SLOTS", "1-10,11-20")
@@ -41,7 +44,8 @@ object EnvConfig {
   val maxParkingDuration: Int   = dotenv.get("MAX_PARKING_DURATION", "180").toInt
 
   // Prometheus
-  val prometheusEndpoint: String = dotenv.get("PROMETHEUS_ENDPOINT", "localhost:9100")
+  val prometheusHost: String = dotenv.get("PROMETHEUS_HOST", "localhost")
+  val prometheusPort: Int    = dotenv.get("PROMETHEUS_PORT", "9090").toInt
 
   // Kafka
   val kafkaTopic: String   = dotenv.get("KAFKA_TOPIC", "parking-events")
