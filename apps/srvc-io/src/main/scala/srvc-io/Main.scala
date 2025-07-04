@@ -5,7 +5,8 @@ import cats.syntax.all._
 import fs2.kafka._
 import io.circe.generic.auto._
 import io.circe.syntax._
-import org.slf4j.MDC
+import io.prometheus.client.exporter.HTTPServer
+import io.prometheus.client.hotspot.DefaultExports
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import retry.RetryDetails._
@@ -31,96 +32,87 @@ object Main extends IOApp {
     val record  = ProducerRecord(EnvConfig.kafkaTopic, event.vehicle.licensePlate, json)
     val message = ProducerRecords.one(record)
 
-    IO {
-      MDC.put("event_type", event.eventType)
-      MDC.put("license_plate", event.vehicle.licensePlate)
-      MDC.put("parking_lot", event.parking.parkingLotId)
-      MDC.put("parking_spot", event.parking.parkingSpotId)
-    } *>
-      retryingOnAllErrors[Unit](
-        policy = retryPolicy,
-        onError = (e: Throwable, details: RetryDetails) =>
-          logger.warn(s"Retry ${details match {
-              case WillDelayAndRetry(_, retriesSoFar, _) => retriesSoFar
-              case _                                     => "unknown"
-            }} after error: ${e.getMessage}")
-      ) {
-        producer.produce(message).flatten.void
-      } <* IO(MDC.clear())
+    val startTime = System.currentTimeMillis()
+
+    retryingOnAllErrors[Unit](
+      policy = retryPolicy,
+      onError = (e: Throwable, details: RetryDetails) =>
+        logger.warn(s"Retry ${details match {
+            case WillDelayAndRetry(_, retriesSoFar, _) => retriesSoFar
+            case _                                     => "unknown"
+          }} after error: ${e.getMessage}")
+    ) {
+      producer.produce(message).flatten.void
+    }
   }
 
   def printConfiguration(): IO[Unit] =
     IO.println(
       s"""
          |=== Parking Event Generator Configuration ===
-         | Events per second: ${EnvConfig.eventsPerSecond}
          | Kafka topic: ${EnvConfig.kafkaTopic}
          | Kafka servers: ${EnvConfig.kafkaServers}
+         | Max retries: ${EnvConfig.maxRetries}
+         | Backoff: ${EnvConfig.backoffMs}ms
+         --------------------------------------------------------
+         | Prometheus Server: ${EnvConfig.prometheusHost}:${EnvConfig.prometheusPort}
+         --------------------------------------------------------
+         | Events per second: ${EnvConfig.eventsPerSecond}
          | Parking lots: ${EnvConfig.parkingLots.mkString(", ")}
          | Vehicle colors: ${EnvConfig.vehicleColors.mkString(", ")}
          | Vehicle types: ${EnvConfig.vehicleTypes.mkString(", ")}
+         | Parking plate pattern: ${EnvConfig.parkingPlatePattern}
+         | Parking plate random probability: ${EnvConfig.parkingPlateRandomProbability}
          | Parking slots: ${EnvConfig.parkingSlots.map(_.mkString("-")).mkString(", ")}
          | Parking duration range: ${EnvConfig.minParkingDuration / 1000}-${EnvConfig.maxParkingDuration / 1000} s
          | Handicap slots: ${EnvConfig.handicapSlots.map(_.mkString(", ")).mkString("; ")}
-         | Prometheus endpoint: ${EnvConfig.prometheusEndpoint}
-         | Max retries: ${EnvConfig.maxRetries}
-         | Backoff: ${EnvConfig.backoffMs}ms
          |=============================================
          |""".stripMargin
     )
 
-  def logMetrics: IO[Unit] = {
-    val activeSessions = GeneratorService.getActiveSessions
-    val availableSpots = GeneratorService.getAvailableSpotCount
-
-    IO {
-      val metricsLogger = org.slf4j.LoggerFactory.getLogger("metrics")
-      MDC.put("metric_type", "parking_status")
-      MDC.put("active_sessions", activeSessions.size.toString)
-      MDC.put("total_available_spots", availableSpots.values.sum.toString)
-
-      availableSpots.foreach { case (lot, count) =>
-        MDC.put(s"available_spots_$lot", count.toString)
-      }
-
-      metricsLogger.info("Parking status update")
-      MDC.clear()
-    }
-  }
-
-  private def logEvent(event: ParkingEvent): IO[Unit] = IO {
-    MDC.put("event_type", event.eventType)
-    MDC.put("license_plate", event.vehicle.licensePlate)
-    MDC.put("parking_lot", event.parking.parkingLotId)
-    MDC.put("parking_spot", event.parking.parkingSpotId)
-    MDC.put("vehicle_type", event.vehicle.vehicleType)
-    MDC.put("vehicle_color", event.vehicle.color)
-  } *> logger.debug(
+  private def logEvent(event: ParkingEvent): IO[Unit] = logger.debug(
     s"Generated ${event.eventType} for ${event.vehicle.licensePlate} at ${event.parking.parkingLotId}:${event.parking.parkingSpotId}"
   )
 
-  override def run(args: List[String]): IO[ExitCode] =
-    KafkaProducer.resource(producerSettings).use { producer =>
-      Ref.of[IO, Int](0).flatMap { counterRef =>
-        def loop: IO[Unit] = for {
-          _             <- IO.sleep((1000 / EnvConfig.eventsPerSecond).millis)
-          entryEventOpt <- GeneratorService.generateEntryEvent()
-          exitEvents    <- GeneratorService.cleanFinishedParkingSessions()
-          _ <- entryEventOpt match {
-            case Some(entryEvent) => logEvent(entryEvent) *> sendEvent(entryEvent, producer)
-            case None             => logger.warn("No parking spot available - could not create parking event")
-          }
-          _ <- exitEvents.traverse { exitEvent =>
-            logEvent(exitEvent) *> sendEvent(exitEvent, producer)
-          }
-          _ <- counterRef.updateAndGet(_ + 1).flatMap { count =>
-            if (count % 100 == 0) logMetrics else IO.unit
-          }
-        } yield ()
+  def startPrometheusServer(): Resource[IO, HTTPServer] =
+    Resource.make(
+      IO.blocking {
+        DefaultExports.initialize()
+        new HTTPServer(EnvConfig.prometheusHost, EnvConfig.prometheusPort)
+      }
+    )(server => IO.blocking(server.stop()))
 
-        printConfiguration() *>
-          logger.debug("Starting parking event generator...") *>
-          fs2.Stream.repeatEval(loop).compile.drain.as(ExitCode.Success)
+  override def run(args: List[String]): IO[ExitCode] =
+    startPrometheusServer().use { _ =>
+      KafkaProducer.resource(producerSettings).use { producer =>
+        def loop: IO[Unit] =
+          IO.sleep((1000 / EnvConfig.eventsPerSecond).millis).flatMap { _ =>
+            GeneratorService.generateEntryEvent().flatMap { entryEventOpt =>
+              GeneratorService.cleanFinishedParkingSessions().flatMap { exitEvents =>
+                val handleEntry = entryEventOpt match {
+                  case Some(entryEvent) =>
+                    logEvent(entryEvent) *> sendEvent(entryEvent, producer)
+                  case None =>
+                    logger.warn("No parking spot available - could not create parking event")
+                }
+
+                val handleExits = exitEvents.traverse { exitEvent =>
+                  logEvent(exitEvent) *> sendEvent(exitEvent, producer)
+                }
+
+                handleEntry *> handleExits.void
+              }
+            }
+          }
+
+        val logStartup =
+          printConfiguration() *>
+            logger.info(
+              s"Starting Prometheus metrics server on ${EnvConfig.prometheusHost}:${EnvConfig.prometheusPort}"
+            ) *>
+            logger.debug("Starting parking event generator...")
+
+        logStartup *> fs2.Stream.repeatEval(loop).compile.drain.as(ExitCode.Success)
       }
     }
 }

@@ -77,39 +77,45 @@ object GeneratorService {
   }
 
   private def findAvailableParking(random: Random): Parking = {
-    val attempts: Range.Inclusive = 1 to 50
-    for (_ <- attempts) {
+    val attempts = LazyList.continually {
       val parkingLotIndex = random.nextInt(EnvConfig.parkingLots.length)
       val parkingLotId    = EnvConfig.parkingLots(parkingLotIndex)
       val parkingSpotId   = generateParkingSpotId(random, parkingLotIndex)
 
       if (isSpotAvailable(parkingLotId, parkingSpotId)) {
         val isHandicapped = EnvConfig.handicapSlots(parkingLotIndex).contains(parkingSpotId)
-        return Parking(parkingLotId, parkingSpotId.toString, isSlotHandicapped = isHandicapped)
+        Some(Parking(parkingLotId, parkingSpotId.toString, isSlotHandicapped = isHandicapped))
+      } else {
+        None
       }
     }
 
-    findAnyAvailableSpot(random)
+    attempts
+      .take(50)
+      .collectFirst { case Some(parking) => parking }
+      .getOrElse(findAnyAvailableSpot(random))
   }
 
-  private def findAnyAvailableSpot(random: Random): Parking = {
-    for ((parkingLotId, lotIndex) <- EnvConfig.parkingLots.zipWithIndex) {
+  private def findAnyAvailableSpot(random: Random): Parking =
+    EnvConfig.parkingLots.zipWithIndex.flatMap { case (parkingLotId, lotIndex) =>
       val occupiedSpotsInLot = occupiedSpots.getOrElse(parkingLotId, mutable.Set.empty[Int])
       val availableSlots     = EnvConfig.parkingSlots(lotIndex)
-      val totalSlots         = availableSlots.length
 
-      if (occupiedSpotsInLot.size < totalSlots) {
-        for (slotId <- availableSlots)
-          if (!occupiedSpotsInLot.contains(slotId)) {
+      if (occupiedSpotsInLot.size < availableSlots.length) {
+        availableSlots
+          .filterNot(occupiedSpotsInLot.contains)
+          .headOption
+          .map { slotId =>
             val isHandicapped = EnvConfig.handicapSlots(lotIndex).contains(slotId)
-            return Parking(parkingLotId, slotId.toString, isSlotHandicapped = isHandicapped)
+            Parking(parkingLotId, slotId.toString, isSlotHandicapped = isHandicapped)
           }
+      } else {
+        None
       }
+    }.headOption.getOrElse {
+      val parkingLotId = EnvConfig.parkingLots(random.nextInt(EnvConfig.parkingLots.length))
+      Parking(parkingLotId, "0", false)
     }
-
-    val parkingLotId = EnvConfig.parkingLots(random.nextInt(EnvConfig.parkingLots.length))
-    Parking(parkingLotId, "0", false)
-  }
 
   private def isSpotAvailable(parkingLotId: String, spotId: Int): Boolean =
     !occupiedSpots.getOrElse(parkingLotId, mutable.Set.empty[Int]).contains(spotId)
@@ -125,6 +131,37 @@ object GeneratorService {
   }
 
   private def generateLicensePlate(random: Random): String = {
+    val usePattern = random.nextDouble() < EnvConfig.parkingPlateRandomProbability
+
+    if (usePattern && EnvConfig.parkingPlatePattern.nonEmpty) {
+      generateLicensePlateFromPattern(random)
+    } else {
+      generateRandomLicensePlate(random)
+    }
+  }
+
+  private def generateLicensePlateFromPattern(random: Random): String = {
+    val pattern = EnvConfig.parkingPlatePattern
+
+    def parsePattern(chars: List[Char]): String = chars match {
+      case Nil => ""
+      case 'd' :: rest =>
+        random.nextInt(10).toString + parsePattern(rest)
+      case 'a' :: rest =>
+        ('A' + random.nextInt(26)).toChar.toString + parsePattern(rest)
+      case '[' :: rest =>
+        val (choices, remaining) = rest.span(_ != ']')
+        val choicesStr           = choices.mkString
+        val selected = if (choicesStr.nonEmpty) choicesStr.charAt(random.nextInt(choicesStr.length)).toString else ""
+        selected + parsePattern(remaining.drop(1))
+      case c :: rest =>
+        c.toString + parsePattern(rest)
+    }
+
+    parsePattern(pattern.toList)
+  }
+
+  private def generateRandomLicensePlate(random: Random): String = {
     val char1   = ('A' + random.nextInt(26)).toChar.toString
     val char2   = ('A' + random.nextInt(26)).toChar.toString
     val numbers = (random.nextInt(900) + 100).toString
@@ -137,17 +174,15 @@ object GeneratorService {
   private def generateUniqueLicensePlate(random: Random): String = {
     val maxAttempts = 100
 
-    val uniquePlate = (for {
-      attempt <- 0 until maxAttempts
-      licensePlate = generateLicensePlate(random)
-      if !activeParkingSessions.contains(licensePlate)
-    } yield licensePlate).headOption
-
-    uniquePlate.getOrElse {
-      val basePlate = generateLicensePlate(random)
-      val suffix    = f"${random.nextInt(999)}%03d"
-      basePlate.take(6) + suffix
-    }
+    LazyList
+      .continually(generateLicensePlate(random))
+      .take(maxAttempts)
+      .find(!activeParkingSessions.contains(_))
+      .getOrElse {
+        val basePlate = generateLicensePlate(random)
+        val suffix    = f"${random.nextInt(999)}%03d"
+        basePlate.take(6) + suffix
+      }
   }
 
   private def generateParkingSpotId(random: Random, lotIndex: Int): Int = {
