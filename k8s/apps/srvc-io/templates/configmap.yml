@@ -13,6 +13,8 @@ data:
     HANDICAP_SLOTS="{{ $config.parking.handicap }}"
     PARKING_LOTS="{{ $config.parking.lots }}"
     EVENTS_PER_SECOND={{ $config.parking.eventsPerSecond }}
+    PARKING_PLATE_PATTERN="{{ $config.vehicle.platePattern }}"
+    PARKING_PLATE_RANDOM_PROBABILITY={{ $config.vehicle.plateRandomProbability }}
     VEHICLE_COLORS="{{ $config.vehicle.colors }}"
     VEHICLE_TYPES="{{ $config.vehicle.types }}"
     MIN_PARKING_DURATION={{ $config.parking.minDuration }}
