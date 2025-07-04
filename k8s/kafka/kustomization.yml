@@ -6,7 +6,6 @@ resources:
 
   - kafka.yml
   - kafka-brokers.yml
-  - kafka-controllers.yml
   - kafka-topics.yml
 
   - kafka-connect.yml
