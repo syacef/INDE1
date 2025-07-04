@@ -1,5 +1,5 @@
 name := "srvc-io"
-version := "0.2.2"
+version := "0.2.3"
 
 scalaVersion := "2.13.16"
 
@@ -64,6 +64,13 @@ libraryDependencies ++= Seq(
     "com.github.cb372" %% "cats-retry" % "3.1.0" exclude("org.typelevel", "cats-effect_2.13"),
     "org.typelevel" %% "cats-effect" % "3.6.1",
     "com.github.fd4s" %% "fs2-kafka" % "3.8.0",
+
+    // Prometheus for alerts
+    "org.dmonix" %% "prometheus-client-scala" % "1.0.0",
+    "io.prometheus" % "prometheus-metrics-exporter-httpserver" % "1.3.8",
+    "io.prometheus" % "simpleclient_hotspot" % "0.16.0",
+    "io.prometheus" % "simpleclient_httpserver" % "0.16.0",
+    "io.prometheus" % "simpleclient" % "0.16.0",
 
     // Logging libraries
     "ch.qos.logback" % "logback-classic" % "1.4.14",
