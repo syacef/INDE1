@@ -34,7 +34,7 @@ Test / compile / wartremoverWarnings ++= Warts.unsafe
 addCommandAlias("lint", "; scalafmtCheck; test:scalafmtCheck; scalafix --check; test:scalafix --check")
 addCommandAlias("fix", "; scalafmt; test:scalafmt; scalafix; test:scalafix")
 
-assemblyMergeStrategy in assembly := {
+assembly/assemblyMergeStrategy := {
     case PathList("META-INF", _*) => MergeStrategy.discard
     case _                        => MergeStrategy.first
 }
