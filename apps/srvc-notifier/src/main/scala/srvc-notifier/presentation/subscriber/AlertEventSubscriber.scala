@@ -8,6 +8,7 @@ import org.apache.kafka.clients.consumer.{ ConsumerConfig, KafkaConsumer }
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.typelevel.log4cats.Logger
 import srvc_notifier.domain.entity.{ AlertEvent, AlertNotification, EnvConfig }
+import srvc_notifier.domain.service.DiscordNotifier
 
 import java.time.Duration
 import java.util.{ Collections, Properties }
@@ -15,7 +16,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class AlertEventConsumer()(implicit logger: Logger[IO], ec: ExecutionContext) {
+class AlertEventConsumer(discordNotifier: DiscordNotifier)(implicit logger: Logger[IO], ec: ExecutionContext) {
 
   def start(): IO[Unit] = {
     val props = new Properties()

@@ -1,17 +1,16 @@
 package srvc_notifier.domain.service
 
 import cats.effect._
-import org.http4s._
-import org.http4s.Method._
-import org.http4s.client._
-import org.http4s.client.blaze._
-import org.http4s.circe._
 import io.circe._
-import io.circe.syntax._
-import io.circe.generic.auto._
+import org.http4s.Method._
+import org.http4s._
+import org.http4s.circe._
+import org.http4s.client._
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import srvc_notifier.domain.entity.AlertNotification
 
 class DiscordNotifier(webhookUrl: String, client: Client[IO]) {
+  implicit val logger = Slf4jLogger.getLogger[IO]
 
   def notify(alert: AlertNotification): IO[Unit] = {
     val payload = Json.obj(
@@ -44,7 +43,7 @@ class DiscordNotifier(webhookUrl: String, client: Client[IO]) {
 
     client
       .expect[String](request)
-      .flatMap(response => IO(println(s"[DiscordNotifier] Response: $response")))
-      .handleErrorWith(e => IO(println(s"[DiscordNotifier] Error: ${e.getMessage}")))
+      .flatMap(response => logger.info(s"Discord notification sent successfully: $response"))
+      .handleErrorWith(e => logger.error(e)(s"Failed to send Discord notification: ${e.getMessage}"))
   }
 }

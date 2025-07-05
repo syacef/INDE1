@@ -7,7 +7,7 @@ val akkaVersion = "2.6.20"
 val akkaHttpVersion = "10.2.10"
 val kafkaVersion = "4.0.0"
 val circeVersion = "0.14.5"
-val http4sVersion = "0.23.26"
+val http4sVersion = "0.23.16"
 
 Compile / scalaSource := baseDirectory.value / "src" / "main" / "scala"
 Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources"
