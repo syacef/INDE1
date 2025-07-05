@@ -1,4 +1,4 @@
-/*package srvc_stats
+package srvc_stats
 
 import io.minio.{MinioClient, ListObjectsArgs, GetObjectArgs}
 import java.util.zip.GZIPInputStream
@@ -17,15 +17,13 @@ object Main extends App {
   // val now = LocalDateTime.now(ZoneOffset.UTC)
 
   // Set back the value above afterwards 
-  val now = LocalDateTime.of(2025, 7, 3, 1, 0)
+  val now = LocalDateTime.of(2025, 7, 10, 1, 0)
 
-  // We compute the previous hour to get info
-  val previousHour = now.minusHours(1)
-  val year = previousHour.getYear.toString
-  val month = f"${previousHour.getMonthValue}%02d"
-  val day = f"${previousHour.getDayOfMonth}%02d"
-  val hour = f"${previousHour.getHour}%02d"
-  val dateParam = s"$year-$month-$day"
+  // We compute the previous week to get info (7 days ago until yesterday)
+  val endDate = now.minusDays(1)
+  val startDate = endDate.minusDays(6)
+  
+  val weekParam = s"${startDate.getYear}-${f"${startDate.getMonthValue}%02d"}-${f"${startDate.getDayOfMonth}%02d"}_to_${endDate.getYear}-${f"${endDate.getMonthValue}%02d"}-${f"${endDate.getDayOfMonth}%02d"}"
 
   val minioClient = MinioClient.builder()
     .endpoint("http://localhost:9000")
@@ -35,25 +33,47 @@ object Main extends App {
   val redis = new Jedis("localhost", 6379)
 
   val bucketName = "parking-events"
-  val prefix = s"topics/parking-event-topic/$year/$month/$day/$hour/"
   
-  println(s"Processing data for: $dateParam at hour $hour")
+  println(s"Processing data for the entire week: $weekParam")
   
-  // Get the different JSONs for the hour
-  val objects = minioClient.listObjects(
-    ListObjectsArgs.builder()
-      .bucket(bucketName)
-      .prefix(prefix)
-      .recursive(true)
-      .build()
-  )
+  // Generate all dates in the week range
+  val weekDates = (0 to 6).map(i => startDate.plusDays(i)).toList
+  println(s"Processing dates: ${weekDates.map(d => s"${d.getYear}-${f"${d.getMonthValue}%02d"}-${f"${d.getDayOfMonth}%02d"}").mkString(", ")}")
+  
+  // Get all prefixes for the week
+  val prefixes = weekDates.map { date =>
+    val year = date.getYear.toString
+    val month = f"${date.getMonthValue}%02d"
+    val day = f"${date.getDayOfMonth}%02d"
+    s"topics/parking-event-topic/$year/$month/$day/"
+  }
+  
+  // Get all JSONs for the entire week (all days)
+  val allGzippedFiles = prefixes.flatMap { prefix =>
+    try {
+      val objects = minioClient.listObjects(
+        ListObjectsArgs.builder()
+          .bucket(bucketName)
+          .prefix(prefix)
+          .recursive(true)
+          .build()
+      )
 
-  val gzippedFiles = objects.iterator().asScala
-    .map(_.get())
-    .filterNot(_.isDir)
-    .map(_.objectName())
-    .filter(_.endsWith(".json.gz"))
-    .toList
+      val files = objects.iterator().asScala
+        .map(_.get())
+        .filterNot(_.isDir)
+        .map(_.objectName())
+        .filter(_.endsWith(".json.gz"))
+        .toList
+      
+      println(s"Found ${files.length} files for prefix: $prefix")
+      files
+    } catch {
+      case e: Exception =>
+        println(s"Error listing objects for prefix $prefix: ${e.getMessage}")
+        List.empty[String]
+    }
+  }
 
   val mapper = new ObjectMapper()
 
@@ -70,8 +90,7 @@ object Main extends App {
   )
 
   case class AggregatedStats(
-    date: String,
-    hour: String,
+    weekRange: String,
     nbrEntries: Int,
     nbrExit: Int,
     occupancy: Map[String, Int],
@@ -122,7 +141,8 @@ object Main extends App {
 
   def calculateRevenueSimulation(occupancy: Map[String, Int], revenuePerHour: Double = 2.0): Double = {
     val totalOccupiedSpots = occupancy.values.sum
-    totalOccupiedSpots * revenuePerHour
+    // For weekly calculation, we assume average occupancy throughout the week
+    totalOccupiedSpots * revenuePerHour * 24 * 7
   }
 
   def aggregateEvents(events: List[ParkingEvent]): AggregatedStats = {
@@ -138,8 +158,7 @@ object Main extends App {
     val revenueSimulation = calculateRevenueSimulation(occupancy)
     
     AggregatedStats(
-      date = dateParam,
-      hour = hour,
+      weekRange = weekParam,
       nbrEntries = entriesCount,
       nbrExit = exitsCount,
       occupancy = occupancy,
@@ -153,8 +172,7 @@ object Main extends App {
     val vehicleTypesJson = stats.vehicleTypes.map { case (k, v) => s""""$k": $v""" }.mkString("{", ", ", "}")
     
     s"""{
-      "date": "${stats.date}",
-      "hour": "${stats.hour}",
+      "weekRange": "${stats.weekRange}",
       "NbrEntries": ${stats.nbrEntries},
       "NbrExit": ${stats.nbrExit},
       "Occupancy": $occupancyJson,
@@ -168,7 +186,7 @@ object Main extends App {
   }
 
   try {
-    val allEvents = gzippedFiles.flatMap { objectPath =>
+    val allEvents = allGzippedFiles.flatMap { objectPath =>
       println(s"Processing file: $objectPath")
       try {
         val stream = minioClient.getObject(
@@ -208,14 +226,14 @@ object Main extends App {
       val aggregatedStats = aggregateEvents(allEvents)
       val statsJson = statsToJson(aggregatedStats)
       
-      val redisKey = s"parking-stats:$dateParam:$hour"
+      val redisKey = s"parking-stats:weekly:$weekParam"
       
       try {
         redis.sendCommand(JsonSetCommand, redisKey, ".", statsJson)
         
-        println(s"Uploaded aggregated stats to Redis with key: $redisKey")
+        println(s"Uploaded aggregated weekly stats to Redis with key: $redisKey")
         println(s"Stats: ${statsJson}")
-        println(s"Total files processed: ${gzippedFiles.length}")
+        println(s"Total files processed: ${allGzippedFiles.length}")
         
       } catch {
         case e: Exception =>
@@ -229,4 +247,3 @@ object Main extends App {
     redis.close()
   }
 }
-*/
