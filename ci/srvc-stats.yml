@@ -1,0 +1,74 @@
+.rules_srvc-stats_lint_test:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - "apps/srvc-stats/**/*"
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - "apps/srvc-stats/**/*"
+      when: always
+    - if: '$CI_COMMIT_BRANCH != "main" && $CI_PIPELINE_SOURCE == "push"'
+      changes:
+        - "apps/srvc-stats/**/*"
+      when: always
+    - when: never
+
+.rules_srvc-stats_build:
+  rules:
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^srvc-stats-v.*/'
+      when: always
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - "apps/srvc-stats/**/*"
+      when: manual
+      allow_failure: true
+    - when: never
+
+srvc-stats:lint:
+  extends: .rules_srvc-stats_lint_test
+  image:
+    name: sbtscala/scala-sbt:graalvm-community-24.0.1_1.11.2_3.7.1
+  stage: lint
+  script:
+    - cd apps/srvc-stats
+    - sbt lint
+  cache:
+    key: srvc-stats-sbt-cache-$CI_COMMIT_REF_SLUG
+    paths:
+      - apps/srvc-stats/target/
+      - ~/.sbt/
+      - ~/.coursier/
+
+srvc-stats:test:
+  extends: .rules_srvc-stats_lint_test
+  image:
+    name: sbtscala/scala-sbt:graalvm-community-24.0.1_1.11.2_3.7.1
+  stage: test
+  script:
+    - cd apps/srvc-stats
+    - sbt clean test coverageReport
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: apps/srvc-stats/target/scala-2.13/coverage-report/cobertura.xml
+    expire_in: 1 week
+  cache:
+    key: srvc-stats-sbt-cache-$CI_COMMIT_REF_SLUG
+    paths:
+      - apps/srvc-stats/target/
+      - ~/.sbt/
+      - ~/.coursier/
+  coverage: '/Total coverage: (\d+\.\d+)%/'
+
+srvc-stats:build:
+  extends: .rules_srvc-stats_build
+  stage: build
+  image: bash:latest
+  script: |
+    cd apps/srvc-stats
+    sbt assembly
+    export VERSION=${CI_COMMIT_TAG#"srvc-stats-v"}
+    tar -czvf target/srvc-stats.${VERSION}.tar.gz -C target/scala-2.13/srvc-stats-assembly-${VERSION}.jar
+    curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file target/srvc-stats.${VERSION}.tar.gz ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/srvc-stats/${VERSION}/srvc-stats.${VERSION}.tar.gz
