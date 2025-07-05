@@ -1,6 +1,6 @@
 package srvc_notifier
 
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.{ ExitCode, IO, IOApp }
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import srvc_notifier.domain.entity.EnvConfig
