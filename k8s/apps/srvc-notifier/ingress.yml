@@ -1,0 +1,21 @@
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: srvc-notifier
+  namespace: apps
+  labels:
+    app: srvc-notifier
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: "notifications.localhost"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: srvc-notifier
+                port:
+                  number: 8080
