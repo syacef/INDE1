@@ -167,12 +167,12 @@ services:
       - "26379:26379"
     command: >
       sh -c 'echo "bind 0.0.0.0" > /etc/sentinel.conf &&
-            echo "sentinel monitor mymaster ${HOST_IP} 6379 2" >> /etc/sentinel.conf &&
-            echo "sentinel resolve-hostnames yes" >> /etc/sentinel.conf &&
-            echo "sentinel down-after-milliseconds mymaster 10000" >> /etc/sentinel.conf &&
-            echo "sentinel failover-timeout mymaster 10000" >> /etc/sentinel.conf &&
-            echo "sentinel parallel-syncs mymaster 1" >> /etc/sentinel.conf &&
-            redis-sentinel /etc/sentinel.conf'
+        echo "sentinel monitor mymaster redis-master 6379 2" >> /etc/sentinel.conf &&
+        echo "sentinel resolve-hostnames yes" >> /etc/sentinel.conf &&
+        echo "sentinel down-after-milliseconds mymaster 10000" >> /etc/sentinel.conf &&
+        echo "sentinel failover-timeout mymaster 10000" >> /etc/sentinel.conf &&
+        echo "sentinel parallel-syncs mymaster 1" >> /etc/sentinel.conf &&
+        redis-sentinel /etc/sentinel.conf'
     networks:
       data-net: {}
       redis-net:

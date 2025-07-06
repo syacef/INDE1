@@ -134,6 +134,10 @@ def send_users_to_endpoint(users, endpoint_url, batch_size=100, headers=None):
         try:
             print(f"Sending batch {batch_num}/{total_batches} ({len(batch)} users)...")
             
+            # Debug: Print first user of batch to verify format
+            #if batch:
+            #    print(f"  Sample user: {json.dumps(batch[0], indent=2)}")
+            
             response = requests.post(
                 endpoint_url,
                 json=batch,
@@ -146,13 +150,18 @@ def send_users_to_endpoint(users, endpoint_url, batch_size=100, headers=None):
                 print(f"  ✓ Batch {batch_num} successful")
             else:
                 failed_batches += 1
-                print(f"  ✗ Batch {batch_num} failed: {response.status_code} - {response.text}")
+                print(f"  ✗ Batch {batch_num} failed: {response.status_code}")
+                print(f"  Response headers: {dict(response.headers)}")
+                try:
+                    print(f"  Response body: {response.text}")
+                except:
+                    print(f"  Response body: <unable to decode>")
                 
         except requests.exceptions.RequestException as e:
             failed_batches += 1
             print(f"  ✗ Batch {batch_num} failed with error: {str(e)}")
         
-        # Small delay between requests to avoid overwhelming the server
+        # Small delay between requests
         if i + batch_size < total_users:
             time.sleep(0.1)
     
@@ -160,7 +169,8 @@ def send_users_to_endpoint(users, endpoint_url, batch_size=100, headers=None):
     print(f"  Total batches: {total_batches}")
     print(f"  Successful: {successful_batches}")
     print(f"  Failed: {failed_batches}")
-    print(f"  Success rate: {successful_batches/total_batches*100:.1f}%")
+    if total_batches > 0:
+        print(f"  Success rate: {successful_batches/total_batches*100:.1f}%")
     
     return successful_batches, failed_batches
 
@@ -213,7 +223,8 @@ def generate_and_send_users(
             count += 1
             
             if len(users) >= batch_size:
-                send_users_to_endpoint([users[-batch_size:]], endpoint_url, batch_size, headers)
+                send_users_to_endpoint(users, endpoint_url, batch_size, headers)
+                users = []  # Clear the users list after sending
                 
             if count % 1000 == 0:
                 print(f"Generated {count} users...")
@@ -222,9 +233,8 @@ def generate_and_send_users(
             break
     
     if users:
-        remaining = len(users) % batch_size
-        if remaining > 0:
-            send_users_to_endpoint(users[-remaining:], endpoint_url, remaining, headers)
+        send_users_to_endpoint(users, endpoint_url, len(users), headers)
+
     
     if save_to_file:
         filename = "generated_users.json"
@@ -254,7 +264,10 @@ if __name__ == "__main__":
         number_range=(0, 999),
         handicapped_probability=0.08,
         batch_size=50,
-        headers={'Content-Type': 'application/json'}
+        headers={
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
     )
 
     print("\nDone!")
