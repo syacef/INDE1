@@ -1,4 +1,4 @@
-package repo_events.domain.entity
+package repo_events.presentation.dto
 
 case class ParkingSlotResponse(
   slot_id: String,
