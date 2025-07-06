@@ -12,14 +12,23 @@ import srvc_notifier.domain.entity.AlertNotification
 class DiscordNotifier(webhookUrl: String, client: Client[IO]) {
   implicit val logger = Slf4jLogger.getLogger[IO]
 
+  private def severityColor(severity: String): Int = severity.toUpperCase match {
+    case "HIGH"   => 0xff0000
+    case "MEDIUM" => 0xffa500
+    case "LOW"    => 0x00bfff
+    case _        => 0x808080
+  }
+
   def notify(alert: AlertNotification): IO[Unit] = {
+    val color = severityColor(alert.severity)
+
     val payload = Json.obj(
       "content" -> Json.fromString(s"**[${alert.severity}]** ${alert.message}"),
       "embeds" -> Json.arr(
         Json.obj(
           "title"       -> Json.fromString("Alert"),
           "description" -> Json.fromString(alert.message),
-          "color"       -> Json.fromInt(0xff0000),
+          "color"       -> Json.fromInt(color),
           "fields" -> Json.arr(
             Json.obj(
               "name"   -> Json.fromString("Severity"),
