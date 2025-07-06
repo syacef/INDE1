@@ -1,5 +1,5 @@
 name := "srvc-io"
-version := "0.2.3"
+version := "0.2.4"
 
 scalaVersion := "2.13.16"
 
@@ -35,8 +35,16 @@ addCommandAlias("lint", "; scalafmtCheck; test:scalafmtCheck; scalafix --check; 
 addCommandAlias("fix", "; scalafmt; test:scalafmt; scalafix; test:scalafix")
 
 assembly/assemblyMergeStrategy := {
-    case PathList("META-INF", _*) => MergeStrategy.discard
-    case _                        => MergeStrategy.first
+  case PathList("META-INF", "services", xs @ _*) => MergeStrategy.concat
+  case PathList("META-INF", "maven", xs @ _*) => MergeStrategy.discard
+  case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+  case PathList("META-INF", "DEPENDENCIES") => MergeStrategy.discard
+  case PathList("META-INF", "LICENSE") => MergeStrategy.discard
+  case PathList("META-INF", "LICENSE.txt") => MergeStrategy.discard
+  case PathList("META-INF", "NOTICE") => MergeStrategy.discard
+  case PathList("META-INF", "NOTICE.txt") => MergeStrategy.discard
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x => MergeStrategy.first
 }
 
 target := baseDirectory.value / "target"

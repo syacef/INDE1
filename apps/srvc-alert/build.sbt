@@ -1,5 +1,5 @@
 name := "srvc-alert"
-version := "0.2.1"
+version := "0.2.2"
 
 scalaVersion := "2.13.16"
 
@@ -24,6 +24,8 @@ ThisBuild / scalacOptions ++= Seq(
 )
 Compile / run / fork := true
 Compile / compile / wartremoverWarnings ++= Warts.unsafe
+
+resolvers += "Scala SBT Mirror" at "https://repo.scala-sbt.org/scalasbt/maven-releases"
 
 Test / envFileName := "test.env"
 Test / envVars := (Test / envFromFile).value
