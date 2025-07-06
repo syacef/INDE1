@@ -20,7 +20,7 @@ LAST_NAMES = [
     "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson",
     "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson",
     "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson", "Walker",
-    "Young", "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill", "Adams"
+    "Young", "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill", "AdAMS"
 ]
 
 def generate_license_plate(letters1, number, letters2):
@@ -169,6 +169,19 @@ def generate_all_letter_combinations():
     return [(l1+l2, l3+l4) for l1 in letters for l2 in letters 
             for l3 in letters for l4 in letters]
 
+def generate_pattern_combinations():
+    """Generate combinations for AA-ddd-aa, BB-ddd-aa, CC-ddd-aa patterns"""
+    first_letters = ["AA", "BB", "CC"]
+    last_letters = [chr(i) + chr(j) for i in range(ord('a'), ord('z')+1) 
+                    for j in range(ord('a'), ord('z')+1)]
+    
+    combinations = []
+    for first in first_letters:
+        for last in last_letters:
+            combinations.append((first, last))
+    
+    return combinations
+
 def generate_and_send_users(
     endpoint_url,
     letter_combinations=None,
@@ -227,11 +240,18 @@ if __name__ == "__main__":
 
     ENDPOINT_URL = "http://localhost:8080/account/bulk"
     print(f"\nSending to endpoint: {ENDPOINT_URL}")
+    # Generate all combinations for patterns AA-ddd-aa, BB-ddd-aa, CC-ddd-aa
+    pattern_combinations = generate_pattern_combinations()
+    
+    print(f"Generated {len(pattern_combinations)} license plate combinations")
+    print("Patterns: AA-ddd-aa, BB-ddd-aa, CC-ddd-aa")
+    print(f"Number range: 000-999")
+    print(f"Total possible plates: {len(pattern_combinations) * 1000}")
 
     generate_and_send_users(
         endpoint_url=ENDPOINT_URL,
-        letter_combinations=[("AA", "AA")],
-        number_range=(0, 99),
+        letter_combinations=pattern_combinations,
+        number_range=(0, 999),
         handicapped_probability=0.08,
         batch_size=50,
         headers={'Content-Type': 'application/json'}
