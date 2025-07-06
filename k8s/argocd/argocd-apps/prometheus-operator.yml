@@ -49,6 +49,10 @@ spec:
           grafana:
             enabled: true
             adminPassword: admin123
+            persistence:
+              enabled: true
+              accessModes: ["ReadWriteOnce"]
+              size: 5Gi
             ingress:
               enabled: true
               ingressClassName: "traefik"
@@ -60,11 +64,15 @@ spec:
               dashboards:
                 enabled: true
                 label: grafana_dashboard
+                folder: /var/lib/grafana/dashboards
+                folderAnnotation: grafana_folder
                 labelValue: "1"
                 searchNamespace: ALL
-              datasources:
-                enabled: true
-                defaultDatasourceEnabled: true
+                annotations: 
+                  grafana_dashboard: "1"
+                provider: 
+                  allowUiUpdates: true
+                  foldersFromFilesStructure: true
             grafana.ini:
               server:
                 root_url: "%(protocol)s://%(domain)s/grafana/"
@@ -94,3 +102,10 @@ spec:
 
           prometheusOperator:
             enabled: true
+
+    - repoURL: git@gitlab.cri.epita.fr:mateo.lelong/inde1
+      targetRevision: HEAD
+      path: k8s/grafana
+      helm:
+        releaseName: grafana-dashboards
+        values: ""

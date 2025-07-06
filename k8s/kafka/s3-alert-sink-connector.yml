@@ -1,0 +1,48 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  name: s3-alert-sink-connector
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka-connect-cluster
+spec:
+  class: io.confluent.connect.s3.S3SinkConnector
+  tasksMax: 1
+  config: # https://docs.confluent.io/kafka-connectors/s3-sink/current/configuration_options.html#s3-configuration-options
+    topics: "alert-event-topic"
+
+    input.data.format: JSON
+    output.data.format: JSON
+
+    store.url: "http://minio-svc.minio.svc.cluster.local:9000"
+    s3.bucket.name: "alert-events"
+    s3.region: "us-east-2"
+    s3.path.style.access.enabled: "true"
+
+    format.class: "io.confluent.connect.s3.format.json.JsonFormat"
+    partitioner.class: "io.confluent.connect.storage.partitioner.TimeBasedPartitioner"
+    partition.duration.ms: 86400000 # 1 day
+    time.interval: DAILY
+    path.format: "yyyy/MM/dd/HH/mm"
+
+    locale: "en"
+    timezone: "UTC"
+
+    flush.size: 100000
+    rotate.schedule.interval.ms: 86400000
+    rotate.interval.ms: 86400000
+
+    s3.object.tagging: "true"
+    storage.class: "io.confluent.connect.s3.storage.S3Storage"
+
+    key.converter: "org.apache.kafka.connect.storage.StringConverter"
+    value.converter: "org.apache.kafka.connect.json.JsonConverter"
+    value.converter.schemas.enable: "false"
+
+    errors.tolerance: "all"
+    errors.log.enable: "true"
+    errors.log.include.messages: "true"
+
+    s3.compression.type: "gzip"
+
+    schema.compatibility: "NONE"

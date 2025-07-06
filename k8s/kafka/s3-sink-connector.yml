@@ -8,50 +8,41 @@ metadata:
 spec:
   class: io.confluent.connect.s3.S3SinkConnector
   tasksMax: 1
-  config:
-    # Kafka topic configuration
+  config: # https://docs.confluent.io/kafka-connectors/s3-sink/current/configuration_options.html#s3-configuration-options
     topics: "parking-event-topic"
 
     input.data.format: JSON
     output.data.format: JSON
 
-    # S3/MinIO connection configuration
-    s3.endpoint: "http://minio-svc.minio.svc.cluster.local:9000"
+    store.url: "http://minio-svc.minio.svc.cluster.local:9000"
     s3.bucket.name: "parking-events"
     s3.region: "us-east-2"
     s3.path.style.access.enabled: "true"
 
-    # File format and partitioning
     format.class: "io.confluent.connect.s3.format.json.JsonFormat"
     partitioner.class: "io.confluent.connect.storage.partitioner.TimeBasedPartitioner"
-    partition.duration.ms: 3600000 # 1 hour partitions
+    partition.duration.ms: 3600000 # 1 hour
     time.interval: DAILY
     path.format: "yyyy/MM/dd/HH/mm"
 
     locale: "en"
     timezone: "UTC"
 
-    # File size and rotation settings to ensure >100MB aggregation
-    flush.size: 100000 # Number of records per file
-    rotate.schedule.interval.ms: 3600000 # Rotate every hour
-    rotate.interval.ms: 900000 # Rotate every 15 minutes as fallback
+    flush.size: 100000
+    rotate.schedule.interval.ms: 86400000
+    rotate.interval.ms: 86400000
 
-    # File naming
     s3.object.tagging: "true"
     storage.class: "io.confluent.connect.s3.storage.S3Storage"
 
-    # Schema and serialization
     key.converter: "org.apache.kafka.connect.storage.StringConverter"
     value.converter: "org.apache.kafka.connect.json.JsonConverter"
     value.converter.schemas.enable: "false"
 
-    # Error handling
     errors.tolerance: "all"
     errors.log.enable: "true"
     errors.log.include.messages: "true"
 
-    # Compression to optimize storage
     s3.compression.type: "gzip"
 
-    # Schema compatibility
     schema.compatibility: "NONE"

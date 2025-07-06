@@ -6,11 +6,11 @@ resources:
 
   - kafka.yml
   - kafka-brokers.yml
-  - kafka-controllers.yml
   - kafka-topics.yml
 
   - kafka-connect.yml
   - s3-sink-connector.yml
+  - s3-alert-sink-connector.yml
   - registry-secret.yml
 
   - kafka-metrics-cm.yml

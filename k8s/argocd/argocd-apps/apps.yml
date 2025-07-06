@@ -34,8 +34,8 @@ spec:
         values: |
           image:
             repository: registry.cri.epita.fr/mateo.lelong/inde1/srvc-io
-            tag: "v0.2.2"
-          replicas: 2
+            tag: "v0.2.3"
+          replicas: 3
           configs:
             - parking:
                 slots: "1-50,51-100,101-150"
@@ -43,8 +43,10 @@ spec:
                 lots: "lot-01,lot-02,lot-03"
                 minDuration: "30000"
                 maxDuration: "1080000"
-                eventsPerSecond: 1
+                eventsPerSecond: 5
               vehicle:
+                platePattern: "AA-ddd-aa"
+                plateRandomProbability: 0.8
                 colors: "red,blue,green,yellow,black,white,gray,silver"
                 types: "car,truck,motorcycle,van,suv"
             - parking:
@@ -53,10 +55,24 @@ spec:
                 lots: "lot-01,lot-02,lot-03"
                 minDuration: "30000"
                 maxDuration: "1080000"
-                eventsPerSecond: 1
+                eventsPerSecond: 5
               vehicle:
+                platePattern: "BB-ddd-aa"
+                plateRandomProbability: 0.8
                 colors: "green,yellow,black,white,gray,silver"
                 types: "car,van,suv"
+            - parking:
+                slots: "101-200,101-200,0-100"
+                handicap: "101-105,101-110,0-10"
+                lots: "lot-01,lot-02,lot-03"
+                minDuration: "30000"
+                maxDuration: "1080000"
+                eventsPerSecond: 5
+              vehicle:
+                platePattern: "CC-ddd-aa"
+                plateRandomProbability: 0.8
+                colors: "green,yellow,black,white,gray,silver"
+                types: "car,motorcycle,truck"
           kafka:
             topic: "parking-event-topic"  
             bootstrapServers: "kafka-kafka-bootstrap.kafka.svc.cluster.local:9092"
@@ -64,4 +80,5 @@ spec:
             maxRetries: 3
             backoffMs: 500
           monitoring:
-            prometheusEndpoint: "http://prometheus-prometheus.prometheus-operator.svc.cluster.local:9090"
+            prometheusHost: 0.0.0.0
+            prometheusPort: 9090

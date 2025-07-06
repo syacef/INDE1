@@ -1,5 +1,5 @@
 name := "repo_account"
-version := "0.2.1"
+version := "0.2.2"
 
 scalaVersion := "2.13.16"
 
@@ -75,6 +75,13 @@ libraryDependencies ++= Seq(
     // Redis client
     "redis.clients" % "jedis" % "4.3.1",
     //"org.typelevel" %% "cats-effect-redis" % "0.4.0",
+
+    // Prometheus
+    "org.dmonix" %% "prometheus-client-scala" % "1.0.0",
+    "io.prometheus" % "prometheus-metrics-exporter-httpserver" % "1.3.8",
+    "io.prometheus" % "simpleclient_hotspot" % "0.16.0",
+    "io.prometheus" % "simpleclient_httpserver" % "0.16.0",
+    "io.prometheus" % "simpleclient" % "0.16.0",
 
     // Logging libraries
     "ch.qos.logback" % "logback-classic" % "1.4.14",

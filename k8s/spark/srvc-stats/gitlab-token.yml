@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitlab-token
+  namespace: spark
+type: Opaque
+stringData:
+  token: A8Fx7eXyiQZRqyZPgJVs

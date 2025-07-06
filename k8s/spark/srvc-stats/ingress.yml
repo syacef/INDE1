@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: srvc-stats-ingress
+  name: srvc-stats-hourly-ingress
   namespace: spark
   annotations:
     kubernetes.io/ingress.class: traefik
@@ -10,12 +10,54 @@ metadata:
 spec:
   rules:
     - http:
-        host: "srvc-stats.localhost"
+        host: "srvc-stats-hourly.localhost"
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: srvc-stats-ui-svc
+                name: srvc-stats-hourly-ui-svc
+                port:
+                  number: 4040
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: srvc-stats-daily-ingress
+  namespace: spark
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - http:
+        host: "srvc-stats-daily.localhost"
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: srvc-stats-daily-ui-svc
+                port:
+                  number: 4040
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: srvc-stats-weekly-ingress
+  namespace: spark
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - http:
+        host: "srvc-stats-weekly.localhost"
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: srvc-stats-weekly-ui-svc
                 port:
                   number: 4040

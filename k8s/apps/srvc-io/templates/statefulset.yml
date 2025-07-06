@@ -23,7 +23,7 @@ spec:
         monitoring: "enabled"
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
+        prometheus.io/port: "9090"
     spec:
       imagePullSecrets:
         - name: pull-secret
@@ -43,6 +43,9 @@ spec:
       - name: srvc-io
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9090
+          name: metrics
         resources:
           requests:
             memory: "256Mi"

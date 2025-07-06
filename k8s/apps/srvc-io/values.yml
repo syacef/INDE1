@@ -1,7 +1,7 @@
 image:
   repository: registry.cri.epita.fr/mateo.lelong/inde1/srvc-io
-  tag: "v0.2.2"
-replicas: 2
+  tag: "v0.2.3"
+replicas: 3
 
 configs:
   - parking:
@@ -13,6 +13,8 @@ configs:
       eventsPerSecond: 10
 
     vehicle:
+      platePattern: "aa-ddd-aa"
+      plateRandomProbability: 0.5
       colors: "red,blue,green,yellow,black,white,gray,silver"
       types: "car,truck,motorcycle,van,suv"
 
@@ -25,6 +27,8 @@ configs:
       eventsPerSecond: 10
 
     vehicle:
+      platePattern: "aa-ddd-aa"
+      plateRandomProbability: 0.5
       colors: "green,yellow,black,white,gray,silver"
       types: "car,van,suv"
 

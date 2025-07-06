@@ -29,11 +29,13 @@ spec:
         - name: pull-secret
       containers:
         - name: repo-account
-          image: registry.cri.epita.fr/mateo.lelong/inde1/repo-account:v0.2.1
+          image: registry.cri.epita.fr/mateo.lelong/inde1/repo-account:v0.2.2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
               name: http
+            - containerPort: 9090
+              name: metrics
           envFrom:
             - configMapRef:
                 name: apps-config
@@ -46,15 +48,15 @@ spec:
             limits:
               memory: "1Gi"
               cpu: "1"
-          livenessProbe:
-            httpGet:
-              path: /liveness
-              port: 8080
-            initialDelaySeconds: 20
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /readiness
-              port: 8080
-            initialDelaySeconds: 20
-            periodSeconds: 10
+          # livenessProbe:
+          #   httpGet:
+          #     path: /liveness
+          #     port: 8080
+          #   initialDelaySeconds: 20
+          #   periodSeconds: 10
+          # readinessProbe:
+          #   httpGet:
+          #     path: /readiness
+          #     port: 8080
+          #   initialDelaySeconds: 20
+          #   periodSeconds: 10
