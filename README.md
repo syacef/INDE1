@@ -19,20 +19,23 @@ Distributed resilient architecture handling parking events in real time.
 │   ├── srvc-alert
 │   ├── srvc-io
 │   ├── srvc-notifier
-│   ├── srvc-stats
-│   └── srvc-store
-├── tests                        # tests in production
+│   └── srvc-stats
 ├── ci                           # ci for each app
 ├── doc
+├── scripts
 ├── k8s
 │   ├── apps                     # deployment of each apps
 │   ├── argocd                   # deployment of argocd
-|   |   ├── argocd-apps              # argocd apps
-│   ├── kustomize.yml
+|   |   └── argocd-apps
+│   ├── kustomization.yml
+│   ├── grafana                  # CRD definition for the kafka operator + topics
 │   ├── kafka                    # CRD definition for the kafka operator + topics
-│   ├── spark                    # CRD definition for the spark operator (including scheduled jobs)
-│   ├── minio                    # deployment of minio cluster
-│   └── redis                    # CRD definition for a Redis sentinel, acting as KV store
+│   ├── minio                    # Additional custom files for minio
+│   ├── redis                    # CRD definition for the redis failover
+│   ├── redis-insight            # Chart helm for redis insight
+│   └── spark                    # CRD definition for the spark operator (including scheduled jobs)
+├── .gitlab-ci
+├── docker-compose.yml           # Docker compose for testing
 └── README.md
 ```
 
@@ -41,7 +44,7 @@ Distributed resilient architecture handling parking events in real time.
 The project is built with a microservices architecture including the following components :
 
 - `repo-account`: User account and login management
-- `srvc-store`: Spark stream to store in datalake
+- `srvc-store`: Kafka connect sink to store all kafka events to S3 datalake
 - `srvc-notifier`: Notification management to handle alerts
 - `srvc-io`: IO event generator
 - `srvc-stats`: Spark scheduled batch job to compute model aggregations
@@ -66,13 +69,7 @@ TinyX is deployed on Kubernetes. The deployment process is handled through our C
 To deploy the whole stack, just use:
 
 ```bash
-kubectl apply -k k8s/
-```
-
-In case crash loop back off occurs, you can just restart all pods with:
-
-```bash
-kubectl delete pods -all -n apps
+kubectl apply -k k8s/argocd
 ```
 
 ## Deployment Specifications
