@@ -17,7 +17,7 @@ object Main extends App {
   // val now = LocalDateTime.now(ZoneOffset.UTC)
 
   // Set back the value above afterwards 
-  val now = LocalDateTime.of(2025, 7, 3, 1, 0)
+  val now = LocalDateTime.of(2025, 7, 3, 16, 0)
 
   // We compute the previous hour to get info
   val previousHour = now.minusHours(1)
@@ -208,7 +208,7 @@ object Main extends App {
       val aggregatedStats = aggregateEvents(allEvents)
       val statsJson = statsToJson(aggregatedStats)
       
-      val redisKey = s"parking-stats:$dateParam:$hour"
+      val redisKey = s"parking-stats:hourly:$dateParam:$hour"
       
       try {
         redis.sendCommand(JsonSetCommand, redisKey, ".", statsJson)
