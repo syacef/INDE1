@@ -4,6 +4,7 @@ include:
   - "ci/srvc-alert.yml"
   - "ci/srvc-stats.yml"
   - "ci/srvc-notifier.yml"
+  - "ci/repo-events.yml"
 
 verify-commit-message:
   image: alpine:3.18

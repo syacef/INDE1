@@ -6,6 +6,7 @@ resources:
   - pull-secrets.yml
 # - srvc-io deployed by argocd as chart helm
   - repo-account
+  - repo-events
   - srvc-alert
   - srvc-notifier
   - secrets.yml
