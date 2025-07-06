@@ -80,6 +80,9 @@ spec:
             - name: parking-events
               policy: none
               purge: false
+            - name: alert-events
+              policy: none
+              purge: false
             - name: datalake
               policy: none
               purge: false
