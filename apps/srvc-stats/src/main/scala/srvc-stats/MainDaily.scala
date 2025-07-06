@@ -205,7 +205,7 @@ object MainDaily extends App {
       val aggregatedStats = aggregateEvents(allEvents)
       val statsJson = statsToJson(aggregatedStats)
       
-      val redisKey = s"parking-stats:$dateParam:daily"
+      val redisKey = s"parking-stats:daily:$dateParam"
       
       try {
         redis.sendCommand(JsonSetCommand, redisKey, ".", statsJson)
