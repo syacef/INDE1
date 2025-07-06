@@ -14,7 +14,7 @@ import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 import org.http4s.ember.server._
 import org.http4s.implicits._
-import repo_events.domain.entity.{EnvConfig, ParkingEvent, ParkingSlotResponse}
+import repo_events.domain.entity.{ EnvConfig, ParkingEvent, ParkingSlotResponse }
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.concurrent.ExecutionContext

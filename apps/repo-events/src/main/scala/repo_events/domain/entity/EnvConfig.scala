@@ -1,7 +1,5 @@
 package repo_events.domain.entity
 
-
-
 object EnvConfig {
   val appHost: String        = sys.env.getOrElse("APP_HOST", "0.0.0.0")
   val appPort: Int           = sys.env.getOrElse("APP_PORT", "8080").toInt
