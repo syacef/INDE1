@@ -43,15 +43,15 @@ spec:
                 name: apps-config
             - secretRef:
                 name: redis-secrets
-          livenessProbe:
-            httpGet:
-              path: /liveness
-              port: 8080
-            initialDelaySeconds: 20
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /readiness
-              port: 8080
-            initialDelaySeconds: 20
-            periodSeconds: 10
+          # livenessProbe:
+          #   httpGet:
+          #     path: /liveness
+          #     port: 8080
+          #   initialDelaySeconds: 20
+          #   periodSeconds: 10
+          # readinessProbe:
+          #   httpGet:
+          #     path: /readiness
+          #     port: 8080
+          #   initialDelaySeconds: 20
+          #   periodSeconds: 10
