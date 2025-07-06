@@ -8,6 +8,6 @@ object EnvConfig {
 
   // Kafka configuration
   val kafkaBootstrapServers: String = sys.env.getOrElse("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
-  val kafkaGroupId: String          = sys.env.getOrElse("KAFKA_GROUP_ID", "parking-events-consumer")
-  val kafkaTopic: String            = sys.env.getOrElse("KAFKA_TOPIC", "parking-events")
+  val kafkaGroupId: String          = sys.env.getOrElse("KAFKA_GROUP_ID", "repo-events-consumer")
+  val kafkaTopic: String            = sys.env.getOrElse("KAFKA_PARKING_TOPIC", "parking-events")
 }
