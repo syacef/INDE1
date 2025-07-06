@@ -12,7 +12,7 @@ import redis.clients.jedis.util.SafeEncoder
 import java.time.{LocalDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
 
-object Main extends App {
+object MainWeekly extends App {
 
   // val now = LocalDateTime.now(ZoneOffset.UTC)
 

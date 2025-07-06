@@ -1,4 +1,4 @@
-/*package srvc_stats
+package srvc_stats
 
 import io.minio.{MinioClient, ListObjectsArgs, GetObjectArgs}
 import java.util.zip.GZIPInputStream
@@ -17,13 +17,14 @@ object Main extends App {
   // val now = LocalDateTime.now(ZoneOffset.UTC)
 
   // Set back the value above afterwards 
-  val now = LocalDateTime.of(2025, 7, 4, 1, 0)
+  val now = LocalDateTime.of(2025, 7, 3, 1, 0)
 
-  // We compute the previous day to get info
-  val previousDay = now.minusDays(1)
-  val year = previousDay.getYear.toString
-  val month = f"${previousDay.getMonthValue}%02d"
-  val day = f"${previousDay.getDayOfMonth}%02d"
+  // We compute the previous hour to get info
+  val previousHour = now.minusHours(1)
+  val year = previousHour.getYear.toString
+  val month = f"${previousHour.getMonthValue}%02d"
+  val day = f"${previousHour.getDayOfMonth}%02d"
+  val hour = f"${previousHour.getHour}%02d"
   val dateParam = s"$year-$month-$day"
 
   val minioClient = MinioClient.builder()
@@ -34,11 +35,11 @@ object Main extends App {
   val redis = new Jedis("localhost", 6379)
 
   val bucketName = "parking-events"
-  val prefix = s"topics/parking-event-topic/$year/$month/$day/"
+  val prefix = s"topics/parking-event-topic/$year/$month/$day/$hour/"
   
-  println(s"Processing data for the entire day: $dateParam")
+  println(s"Processing data for: $dateParam at hour $hour")
   
-  // Get all JSONs for the entire day (all hours)
+  // Get the different JSONs for the hour
   val objects = minioClient.listObjects(
     ListObjectsArgs.builder()
       .bucket(bucketName)
@@ -70,6 +71,7 @@ object Main extends App {
 
   case class AggregatedStats(
     date: String,
+    hour: String,
     nbrEntries: Int,
     nbrExit: Int,
     occupancy: Map[String, Int],
@@ -120,8 +122,7 @@ object Main extends App {
 
   def calculateRevenueSimulation(occupancy: Map[String, Int], revenuePerHour: Double = 2.0): Double = {
     val totalOccupiedSpots = occupancy.values.sum
-    // For daily calculation, we assume average occupancy throughout the day
-    totalOccupiedSpots * revenuePerHour * 24 // 24 hours in a day
+    totalOccupiedSpots * revenuePerHour
   }
 
   def aggregateEvents(events: List[ParkingEvent]): AggregatedStats = {
@@ -138,6 +139,7 @@ object Main extends App {
     
     AggregatedStats(
       date = dateParam,
+      hour = hour,
       nbrEntries = entriesCount,
       nbrExit = exitsCount,
       occupancy = occupancy,
@@ -152,6 +154,7 @@ object Main extends App {
     
     s"""{
       "date": "${stats.date}",
+      "hour": "${stats.hour}",
       "NbrEntries": ${stats.nbrEntries},
       "NbrExit": ${stats.nbrExit},
       "Occupancy": $occupancyJson,
@@ -205,12 +208,12 @@ object Main extends App {
       val aggregatedStats = aggregateEvents(allEvents)
       val statsJson = statsToJson(aggregatedStats)
       
-      val redisKey = s"parking-stats:$dateParam:daily"
+      val redisKey = s"parking-stats:$dateParam:$hour"
       
       try {
         redis.sendCommand(JsonSetCommand, redisKey, ".", statsJson)
         
-        println(s"Uploaded aggregated daily stats to Redis with key: $redisKey")
+        println(s"Uploaded aggregated stats to Redis with key: $redisKey")
         println(s"Stats: ${statsJson}")
         println(s"Total files processed: ${gzippedFiles.length}")
         
@@ -226,4 +229,3 @@ object Main extends App {
     redis.close()
   }
 }
-*/
