@@ -7,7 +7,7 @@ metadata:
     app: srvc-notifier
     type: backends
 spec:
-  replicas: 1 # Number of replicas
+  # replicas: 1 # managed by hpa
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -21,32 +21,44 @@ spec:
       labels:
         app: srvc-notifier
         monitoring: "enabled"
-        annotations:
-          prometheus.io/scrape: "true"
-          prometheus.io/port: "8080" 
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090" 
     spec:
       imagePullSecrets:
         - name: pull-secret
       containers:
         - name: srvc-notifier
-          image: registry.cri.epita.fr/mateo.lelong/inde1/srvc-notifier:v2.0.2
+          image: registry.cri.epita.fr/mateo.lelong/inde1/srvc-notifier:v0.1.0
           imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 9090
+              name: metrics
+          envFrom:
+            - configMapRef:
+                name: apps-config
+            - secretRef:
+                name: redis-secrets
+            - secretRef:
+                name: srvc-notifier-secrets
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
-            limits:
               memory: "512Mi"
               cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
           livenessProbe:
             httpGet:
-              path: /q/health/live
+              path: /liveness
               port: 8080
             initialDelaySeconds: 20
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /q/health/ready
+              path: /readiness
               port: 8080
             initialDelaySeconds: 20
             periodSeconds: 10
