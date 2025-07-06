@@ -1,6 +1,9 @@
 ---
 kind: Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
-namespace: apps
 resources:
   - deployment.yml
+  - service.yml
+  - ingress.yml
+  - hpa.yml
+  - secrets.yml
