@@ -67,21 +67,18 @@ object RepoEventsApi extends IOApp {
       .records
       .mapAsync(25) { committable =>
         val record = committable.record
-        for {
-          _           <- IO(println(s"Received message: ${record.value}"))
-          eventResult <- IO(parseParkingEvent(record.value))
-          _ <- eventResult match {
+        logger.info(s"Received message: ${record.value}")
+          .flatMap(_ => IO(parseParkingEvent(record.value)))
+          .flatMap(eventResult => eventResult match {
             case Right(event) => processParkingEvent(event)
-            case Left(error)  => IO(println(s"Failed to parse event: $error"))
-          }
-          _ <- committable.offset.commit
-        } yield ()
+            case Left(error) => logger.error(s"Failed to parse event: $error")
+          })
+          .flatMap(_ => committable.offset.commit)
       }
       .handleErrorWith { error =>
-        Stream.eval(IO(println(s"Kafka consumer error: ${error.getMessage}"))) >> Stream.empty
+        Stream.eval(logger.error(s"Kafka consumer error: ${error.getMessage}")) >> Stream.empty
       }
 
-  // Proper JSON parsing using circe
   def parseParkingEvent(jsonString: String): Either[String, ParkingEvent] =
     decode[ParkingEvent](jsonString) match {
       case Right(event) => Right(event)
