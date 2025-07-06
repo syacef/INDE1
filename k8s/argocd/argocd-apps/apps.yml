@@ -43,7 +43,7 @@ spec:
                 lots: "lot-01,lot-02,lot-03"
                 minDuration: "30000"
                 maxDuration: "1080000"
-                eventsPerSecond: 1
+                eventsPerSecond: 5
               vehicle:
                 platePattern: "AA-ddd-aa"
                 plateRandomProbability: 0.8
@@ -55,7 +55,7 @@ spec:
                 lots: "lot-01,lot-02,lot-03"
                 minDuration: "30000"
                 maxDuration: "1080000"
-                eventsPerSecond: 1
+                eventsPerSecond: 5
               vehicle:
                 platePattern: "BB-ddd-aa"
                 plateRandomProbability: 0.8
@@ -67,7 +67,7 @@ spec:
                 lots: "lot-01,lot-02,lot-03"
                 minDuration: "30000"
                 maxDuration: "1080000"
-                eventsPerSecond: 1
+                eventsPerSecond: 5
               vehicle:
                 platePattern: "CC-ddd-aa"
                 plateRandomProbability: 0.8
