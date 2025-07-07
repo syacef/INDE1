@@ -4,7 +4,7 @@ metadata:
   name: srvc-stats-hourly
   namespace: spark
 spec:
-  schedule: "@every 5m"
+  schedule: "@every 1m"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
