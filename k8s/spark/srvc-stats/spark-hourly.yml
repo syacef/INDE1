@@ -53,11 +53,11 @@ spec:
                 -o /opt/spark/app/srvc-stats-assembly-0.1.1.jar
           resources:
             limits:
-              cpu: 50m
-              memory: 0.25Gi
+              cpu: 150m
+              memory: 256Mi
             requests:
-              cpu: 50m
-              memory: 0.25Gi
+              cpu: 150m
+              memory: 256Mi
           volumeMounts:
             - mountPath: /opt/spark/app
               name: app-jar
