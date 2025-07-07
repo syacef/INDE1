@@ -79,7 +79,7 @@ spec:
           name: gitlab-token
           readOnly: true
     executor:
-      instances: 3
+      instances: 1
       cores: 1
       memory: "512m"
       labels:
