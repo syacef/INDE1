@@ -82,14 +82,13 @@ srvc-stats:deploy:
   dependencies:
     - srvc-stats:build
   script: |
-    cd apps/srvc-stats
     export VERSION=${CI_COMMIT_TAG#"srvc-stats-v"}
     # Find the assembly jar file
-    ASSEMBLY_JAR=$(find target/scala-2.13/ -name "srvc-stats-assembly-*.jar" | head -1)
+    ASSEMBLY_JAR=$(find apps/srvc-stats/target/scala-2.13/ -name "srvc-stats-assembly-*.jar" | head -1)
     if [ -z "$ASSEMBLY_JAR" ]; then
       echo "Error: Assembly jar not found"
       exit 1
     fi
     echo "Found assembly jar: $ASSEMBLY_JAR"
-    tar -czvf target/srvc-stats.${VERSION}.tar.gz -C target/scala-2.13/ $(basename $ASSEMBLY_JAR)
-    curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file target/srvc-stats.${VERSION}.tar.gz ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/srvc-stats/${VERSION}/srvc-stats.${VERSION}.tar.gz
+    tar -czvf apps/srvc-stats/target/srvc-stats.${VERSION}.tar.gz -C $(dirname "$ASSEMBLY_JAR") $(basename "$ASSEMBLY_JAR")
+    curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file apps/srvc-stats/target/srvc-stats.${VERSION}.tar.gz ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/srvc-stats/${VERSION}/srvc-stats.${VERSION}.tar.gz
