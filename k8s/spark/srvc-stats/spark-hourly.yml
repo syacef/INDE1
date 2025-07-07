@@ -16,8 +16,6 @@ spec:
     imagePullPolicy: IfNotPresent
     mainClass: srvc_stats.MainHourly
     mainApplicationFile: "local:///opt/spark/app/srvc-stats-assembly-0.1.1.jar"
-    arguments:
-      - "10000"
     volumes:
       - name: app-jar
         emptyDir:
@@ -66,8 +64,9 @@ spec:
             - mountPath: /etc/gitlab-token
               name: gitlab-token
               readOnly: true
-      cores: 0.5
-      memory: "512m"
+      cores: 1
+      coreLimit: "1000m"
+      memory: "512Mi"
       serviceAccount: spark-operator-spark
       labels:
         app: srvc-stats
@@ -80,8 +79,9 @@ spec:
           readOnly: true
     executor:
       instances: 1
-      cores: 0.5
-      memory: "512m"
+      cores: 1
+      coreLimit: "1000m"
+      memory: "512Mi"
       labels:
         app: srvc-stats
         component: executor
