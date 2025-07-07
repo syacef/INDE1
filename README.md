@@ -49,7 +49,7 @@ The project is built with a microservices architecture including the following c
 - `srvc-io`: IO event generator
 - `srvc-stats`: Spark scheduled batch job to compute model aggregations
 
-![Architecture Diagram](doc/arch/infra_v1.1.png)
+![Architecture Diagram](doc/arch/infra_v1.2.png)
 
 ## Testing
 
@@ -64,7 +64,7 @@ docker compose down
 
 ## Deployment
 
-TinyX is deployed on Kubernetes. The deployment process is handled through our CI/CD pipeline.
+Our Project is deployed on Kubernetes. The deployment process is handled through our CI/CD pipeline.
 
 To deploy the whole stack, just use:
 
