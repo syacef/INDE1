@@ -48,7 +48,7 @@
               "viz": false
             },
             "insertNulls": false,
-            "lineInterpolation": "linear",
+            "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
@@ -76,7 +76,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "currencyEUR"
         },
         "overrides": []
       },
@@ -311,8 +312,8 @@
     "list": [
       {
         "current": {
-          "text": "2025-07-06",
-          "value": "2025-07-06"
+          "text": "2025-07-03",
+          "value": "2025-07-03"
         },
         "description": "Correspond to a date and should be in the format yyyy-mm-dd",
         "hide": 1,
@@ -323,8 +324,8 @@
       },
       {
         "current": {
-          "text": "12",
-          "value": "12"
+          "text": "15",
+          "value": "15"
         },
         "description": "Correspond to a time of the day and should respect the following format : hh (like 12 for 12 p.m)",
         "name": "hour",
@@ -390,7 +391,7 @@
             "value": "11"
           },
           {
-            "selected": true,
+            "selected": false,
             "text": "12",
             "value": "12"
           },
@@ -405,7 +406,7 @@
             "value": "14"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "15",
             "value": "15"
           },
@@ -456,12 +457,12 @@
     ]
   },
   "time": {
-    "from": "2025-07-05T19:18:46.540Z",
-    "to": "2025-07-07T10:38:31.825Z"
+    "from": "2025-07-02T23:43:56.152Z",
+    "to": "2025-07-04T06:09:12.952Z"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Real Time",
   "uid": "cer4ykipfyqyod",
-  "version": 17
+  "version": 18
 }

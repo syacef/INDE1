@@ -1,127 +1,147 @@
 package srvc_stats
 
-import io.minio.{MinioClient, ListObjectsArgs, GetObjectArgs}
-import java.util.zip.GZIPInputStream
-import scala.io.Source
-import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
-import scala.jdk.CollectionConverters._
-import redis.clients.jedis.Jedis
-import redis.clients.jedis.Protocol
-import redis.clients.jedis.commands.ProtocolCommand
-import redis.clients.jedis.util.SafeEncoder
-import java.time.{LocalDateTime, ZoneOffset}
-import java.time.format.DateTimeFormatter
-import scala.util.{Try, Success, Failure}
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.{ Dataset, SparkSession }
+import redis.clients.jedis.JedisSentinelPool
+import srvc_stats.domain.entity.{ AggregatedStatsSpark, EnvConfig, ParkingEventSpark }
+import srvc_stats.domain.service.RedisService
 
-object Main extends App {
+import java.time.{ LocalDateTime, ZoneOffset }
 
-  // val now = LocalDateTime.now(ZoneOffset.UTC)
+object MainHourly {
 
-  // Set back the value above afterwards 
-  val now = LocalDateTime.of(2025, 7, 7, 13, 0)
+  def getDateTimeParams(): (String, String, String, String, String, String) = {
+    val now          = LocalDateTime.now(ZoneOffset.UTC)
+    val previousHour = now.minusHours(1)
+    val year         = previousHour.getYear.toString
+    val month        = f"${previousHour.getMonthValue}%02d"
+    val day          = f"${previousHour.getDayOfMonth}%02d"
+    val hour         = f"${previousHour.getHour}%02d"
+    val dateParam    = s"$year-$month-$day"
 
-  // We compute the previous hour to get info
-  val previousHour = now.minusHours(1)
-  val year = previousHour.getYear.toString
-  val month = f"${previousHour.getMonthValue}%02d"
-  val day = f"${previousHour.getDayOfMonth}%02d"
-  val hour = f"${previousHour.getHour}%02d"
-  val dateParam = s"$year-$month-$day"
-
-  val minioClient = MinioClient.builder()
-    .endpoint("http://localhost:9000")
-    .credentials("minio", "minio123")
-    .build()
-
-  val redis = new Jedis("localhost", 6379)
-
-  val bucketName = "parking-events"
-  val prefix = s"topics/parking-event-topic/$year/$month/$day/$hour/"
-  
-  println(s"Processing data for: $dateParam at hour $hour")
-
-  case class ParkingEvent(
-    parkingSpotId: String,
-    parkingLotId: String,
-    isSlotHandicapped: Boolean,
-    duration: Long,
-    eventType: String,
-    timestamp: String,
-    licensePlate: String,
-    color: String,
-    vehicleType: String
-  )
-
-  case class AggregatedStats(
-    date: String,
-    hour: String,
-    nbrEntries: Int,
-    nbrExit: Int,
-    occupancy: Map[String, Int],
-    revenueSimulation: Double,
-    vehicleTypes: Map[String, Int]
-  )
-
-  object JsonSetCommand extends ProtocolCommand {
-    override def getRaw: Array[Byte] = SafeEncoder.encode("JSON.SET")
+    (year, month, day, hour, dateParam, s"$year/$month/$day/$hour")
   }
 
-  def parseJsonToParkingEvent(jsonNode: JsonNode): Option[ParkingEvent] = {
-    Option(jsonNode.get("parking"))
-      .flatMap(parking => Option(jsonNode.get("vehicle"))
-        .map(vehicle => ParkingEvent(
-          parkingSpotId = parking.get("parkingSpotId").asText(),
-          parkingLotId = parking.get("parkingLotId").asText(),
-          isSlotHandicapped = parking.get("isSlotHandicapped").asBoolean(),
-          duration = jsonNode.get("duration").asLong(),
-          eventType = jsonNode.get("eventType").asText(),
-          timestamp = jsonNode.get("timestamp").asText(),
-          licensePlate = vehicle.get("licensePlate").asText(),
-          color = vehicle.get("color").asText(),
-          vehicleType = vehicle.get("vehicleType").asText()
-        ))
+  def readParkingEvents(spark: SparkSession, s3Path: String): Dataset[ParkingEventSpark] = {
+    import spark.implicits._
+
+    val schema = StructType(
+      Seq(
+        StructField(
+          "parking",
+          StructType(
+            Seq(
+              StructField("parkingSpotId", StringType, nullable = false),
+              StructField("parkingLotId", StringType, nullable = false),
+              StructField("isSlotHandicapped", BooleanType, nullable = false)
+            )
+          ),
+          nullable = false
+        ),
+        StructField(
+          "vehicle",
+          StructType(
+            Seq(
+              StructField("licensePlate", StringType, nullable = false),
+              StructField("color", StringType, nullable = false),
+              StructField("vehicleType", StringType, nullable = false)
+            )
+          ),
+          nullable = false
+        ),
+        StructField("duration", LongType, nullable = false),
+        StructField("eventType", StringType, nullable = false),
+        StructField("timestamp", StringType, nullable = false)
       )
+    )
+
+    val df = spark.read
+      .schema(schema)
+      .option("multiline", "false")
+      .option("compression", "gzip")
+      .json(s3Path)
+      .filter(col("eventType").isin("PARKING_ENTRY", "PARKING_EXIT"))
+
+    val parkingEventsDF = df.select(
+      col("parking.parkingSpotId").as("parkingSpotId"),
+      col("parking.parkingLotId").as("parkingLotId"),
+      col("parking.isSlotHandicapped").as("isSlotHandicapped"),
+      col("duration"),
+      col("eventType"),
+      col("timestamp"),
+      col("vehicle.licensePlate").as("licensePlate"),
+      col("vehicle.color").as("color"),
+      col("vehicle.vehicleType").as("vehicleType")
+    )
+
+    val sample = parkingEventsDF.limit(1).collect()
+    if (sample.isEmpty) {
+      throw new RuntimeException(s"No valid parking events found in S3 path: $s3Path")
+    } else {
+      println(s"Sample parking event: ${sample(0).mkString(", ")}")
+    }
+
+    parkingEventsDF.cache()
+
+    parkingEventsDF.as[ParkingEventSpark]
   }
 
-  def calculateOccupancy(events: List[ParkingEvent]): Map[String, Int] = {
-    val entriesByLot = events
-      .filter(_.eventType == "PARKING_ENTRY")
-      .groupBy(_.parkingLotId)
-      .view.mapValues(_.length).toMap
-    
-    val exitsByLot = events
-      .filter(_.eventType == "PARKING_EXIT")
-      .groupBy(_.parkingLotId)
-      .view.mapValues(_.length).toMap
-    
+  def calculateOccupancyEfficient(events: Dataset[ParkingEventSpark]): Map[String, Long] = {
+
+    val eventCounts = events
+      .groupBy(col("parkingLotId"), col("eventType"))
+      .agg(count("*").as("count"))
+      .collect()
+
+    val entriesByLot = eventCounts
+      .filter(_.getString(1) == "PARKING_ENTRY")
+      .map(row => row.getString(0) -> row.getLong(2))
+      .toMap
+
+    val exitsByLot = eventCounts
+      .filter(_.getString(1) == "PARKING_EXIT")
+      .map(row => row.getString(0) -> row.getLong(2))
+      .toMap
+
     val allLots = entriesByLot.keySet ++ exitsByLot.keySet
-    
+
     allLots.map { lot =>
-      val entries = entriesByLot.getOrElse(lot, 0)
-      val exits = exitsByLot.getOrElse(lot, 0)
-      lot -> math.max(0, entries - exits)
+      val entries = entriesByLot.getOrElse(lot, 0L)
+      val exits   = exitsByLot.getOrElse(lot, 0L)
+      lot -> math.max(0L, entries - exits)
     }.toMap
   }
 
-  def calculateRevenueSimulation(occupancy: Map[String, Int], revenuePerHour: Double = 2.0): Double = {
+  def calculateVehicleTypeCounts(events: Dataset[ParkingEventSpark]): Map[String, Long] =
+    events
+      .groupBy(col("vehicleType"))
+      .agg(count("*").as("count"))
+      .collect()
+      .map(row => row.getString(0) -> row.getLong(1))
+      .toMap
+
+  def calculateRevenueSimulation(
+    occupancy: Map[String, Long],
+    revenuePerHour: Double = EnvConfig.revenuePerHour
+  ): Double = {
     val totalOccupiedSpots = occupancy.values.sum
     totalOccupiedSpots * revenuePerHour
   }
 
-  def aggregateEvents(events: List[ParkingEvent]): AggregatedStats = {
-    val entriesCount = events.count(_.eventType == "PARKING_ENTRY")
-    val exitsCount = events.count(_.eventType == "PARKING_EXIT")
-    
-    val occupancy = calculateOccupancy(events)
-    
-    val vehicleTypeCounts = events
-      .groupBy(_.vehicleType)
-      .view.mapValues(_.length).toMap
-    
+  def aggregateEventsEfficient(events: Dataset[ParkingEventSpark], date: String, hour: String): AggregatedStatsSpark = {
+    val totalEvents  = events.count()
+    val entriesCount = events.filter(col("eventType") === "PARKING_ENTRY").count()
+    val exitsCount   = events.filter(col("eventType") === "PARKING_EXIT").count()
+
+    val occupancy         = calculateOccupancyEfficient(events)
+    val vehicleTypeCounts = calculateVehicleTypeCounts(events)
     val revenueSimulation = calculateRevenueSimulation(occupancy)
-    
-    AggregatedStats(
-      date = dateParam,
+
+    println(s"Processed $totalEvents events: $entriesCount entries, $exitsCount exits")
+
+    AggregatedStatsSpark(
+      date = date,
       hour = hour,
       nbrEntries = entriesCount,
       nbrExit = exitsCount,
@@ -131,10 +151,10 @@ object Main extends App {
     )
   }
 
-  def statsToJson(stats: AggregatedStats): String = {
-    val occupancyJson = stats.occupancy.map { case (k, v) => s""""$k": $v""" }.mkString("{", ", ", "}")
+  def statsToJson(stats: AggregatedStatsSpark): String = {
+    val occupancyJson    = stats.occupancy.map { case (k, v) => s""""$k": $v""" }.mkString("{", ", ", "}")
     val vehicleTypesJson = stats.vehicleTypes.map { case (k, v) => s""""$k": $v""" }.mkString("{", ", ", "}")
-    
+
     s"""{
       "date": "${stats.date}",
       "hour": "${stats.hour}",
@@ -146,88 +166,97 @@ object Main extends App {
     }"""
   }
 
-  def processFile(objectPath: String, mapper: ObjectMapper): List[ParkingEvent] = {
-    println(s"Processing file: $objectPath")
-    
-    val result = for {
-      stream <- Try(minioClient.getObject(
-        GetObjectArgs.builder()
-          .bucket(bucketName)
-          .`object`(objectPath)
-          .build()
-      ))
-      gzipStream <- Try(new GZIPInputStream(stream))
-      jsonLines <- Try(Source.fromInputStream(gzipStream).getLines().toList)
-    } yield {
-      jsonLines.flatMap { line =>
-        if (line.trim.nonEmpty) {
-          Try(mapper.readTree(line)) match {
-            case Success(jsonNode) => parseJsonToParkingEvent(jsonNode)
-            case Failure(e) =>
-              println(s"Error parsing line: ${e.getMessage}")
-              None
-          }
-        } else {
-          None
-        }
-      }
-    }
-    
-    result match {
-      case Success(events) => events
-      case Failure(e) =>
-        println(s"Failed to process $objectPath: ${e.getMessage}")
-        List.empty[ParkingEvent]
-    }
-  }
+  def uploadToRedis(stats: AggregatedStatsSpark, redisKey: String, redisPool: JedisSentinelPool): Unit = {
+    val statsJson = statsToJson(stats)
 
-  def getGzippedFiles(): List[String] = {
-    val objects = minioClient.listObjects(
-      ListObjectsArgs.builder()
-        .bucket(bucketName)
-        .prefix(prefix)
-        .recursive(true)
-        .build()
+    val jedis = redisPool.getResource
+    jedis.sendCommand(
+      redis.clients.jedis.Protocol.Command.valueOf("JSON.SET"),
+      redisKey.getBytes("UTF-8"),
+      ".".getBytes("UTF-8"),
+      statsJson.getBytes("UTF-8")
     )
-
-    objects.iterator().asScala
-      .map(_.get())
-      .filterNot(_.isDir)
-      .map(_.objectName())
-      .filter(_.endsWith(".json.gz"))
-      .toList
+    println(s"Successfully uploaded stats to Redis with key: $redisKey")
+    println(
+      s"Stats summary: ${stats.nbrEntries} entries, ${stats.nbrExit} exits, revenue: ${stats.revenueSimulation}"
+    )
+    jedis.close()
   }
 
-  def uploadToRedis(aggregatedStats: AggregatedStats, redisKey: String): Unit = {
-    val statsJson = statsToJson(aggregatedStats)
-    
-    Try(redis.sendCommand(JsonSetCommand, redisKey, ".", statsJson)) match {
-      case Success(_) =>
-        println(s"Uploaded aggregated stats to Redis with key: $redisKey")
-        println(s"Stats: ${statsJson}")
-      case Failure(e) =>
-        println(s"Failed to upload to Redis: ${e.getMessage}")
-    }
-  }
+  def processHourlyBatch(
+    spark: SparkSession,
+    s3Path: String,
+    date: String,
+    hour: String,
+    redisPool: JedisSentinelPool
+  ): Unit = {
+    println(s"Processing hourly batch for $date at hour $hour")
+    println(s"Reading from S3 path: $s3Path")
 
-  def processData(): Unit = {
-    val gzippedFiles = getGzippedFiles()
-    val mapper = new ObjectMapper()
-    
-    val allEvents = gzippedFiles.flatMap(processFile(_, mapper))
-    
-    println(s"Total events parsed: ${allEvents.length}")
-    println(s"Total files processed: ${gzippedFiles.length}")
+    val events     = readParkingEvents(spark, s3Path)
+    val eventCount = events.count()
 
-    if (allEvents.nonEmpty) {
-      val aggregatedStats = aggregateEvents(allEvents)
-      val redisKey = s"parking-stats:hourly:$dateParam:$hour"
-      uploadToRedis(aggregatedStats, redisKey)
+    if (eventCount > 0) {
+      println(s"Found $eventCount events to process")
+
+      val aggregatedStats = aggregateEventsEfficient(events, date, hour)
+      val redisKey        = s"parking-stats:hourly:$date:$hour"
+
+      uploadToRedis(aggregatedStats, redisKey, redisPool)
     } else {
-      println("No events found to aggregate")
+      println("No events found for processing")
     }
+
+    events.unpersist()
   }
 
-  processData()
-  redis.close()
+  def main(args: Array[String]): Unit = {
+    val redisPool: JedisSentinelPool = RedisService.createRedisPool()
+    val spark = SparkSession
+      .builder()
+      .appName("ParkingStatsHourly")
+      .config("spark.sql.adaptive.enabled", "true")
+      .config("spark.sql.adaptive.coalescePartitions.enabled", "true")
+      .config("spark.sql.adaptive.skewJoin.enabled", "true")
+      .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+      .config("spark.sql.execution.arrow.pyspark.enabled", "true")
+      .config("spark.sql.streaming.checkpointLocation", "/tmp/spark-checkpoints")
+      .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+      .config("spark.hadoop.fs.s3a.endpoint", EnvConfig.minioHost)
+      .config("spark.hadoop.fs.s3a.access.key", EnvConfig.minioAccessKey)
+      .config("spark.hadoop.fs.s3a.secret.key", EnvConfig.minioSecretKey)
+      .config("spark.hadoop.fs.s3a.path.style.access", "true")
+      .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
+      .config("spark.hadoop.fs.s3a.connection.timeout", "30000")
+      .config("spark.hadoop.fs.s3a.connection.establish.timeout", "30000")
+      .config("spark.hadoop.fs.s3a.connection.request.timeout", "30000")
+      .config("spark.hadoop.fs.s3a.socket.timeout", "30000")
+      .config("spark.hadoop.fs.s3a.attempts.maximum", "3")
+      .config("spark.hadoop.fs.s3a.retry.limit", "3")
+      .config("spark.hadoop.fs.s3a.retry.interval", "1000")
+      .config("spark.hadoop.fs.s3a.multipart.size", "134217728")
+      .config("spark.hadoop.fs.s3a.multipart.threshold", "134217728")
+      .config("spark.hadoop.fs.s3a.block.size", "67108864")
+      .config("spark.hadoop.fs.s3a.buffer.dir", "/tmp")
+      .config("spark.hadoop.fs.s3a.fast.upload", "true")
+      .config("spark.hadoop.fs.s3a.fast.upload.buffer", "disk")
+      .config("spark.hadoop.fs.s3a.fast.upload.active.blocks", "8")
+      .getOrCreate()
+
+    try {
+      val (year, month, day, hour, dateParam, pathSuffix) = getDateTimeParams()
+      val s3Path = s"s3a://${EnvConfig.minioBucket}/${EnvConfig.minioPrefixPath}/$year/$month/5/$hour/*.json.gz"
+
+      println(s"Starting Spark application for date: $dateParam, hour: $hour")
+      processHourlyBatch(spark, s3Path, dateParam, hour, redisPool)
+
+    } catch {
+      case e: Exception =>
+        println(s"Application failed: ${e.getMessage}")
+        e.printStackTrace()
+    } finally {
+      redisPool.close()
+      spark.stop()
+    }
+  }
 }
