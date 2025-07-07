@@ -8,18 +8,6 @@ spec:
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
-
-  volumes:
-    - name: app-jar
-      emptyDir:
-        sizeLimit: 250Mi
-    - name: gitlab-token
-      secret:
-        secretName: gitlab-token
-        items:
-          - key: token
-            path: token
-
   template:
     type: Scala
     mode: cluster
@@ -30,6 +18,16 @@ spec:
     mainApplicationFile: "local:///opt/spark/app/srvc-stats-assembly-0.1.1.jar"
     arguments:
       - "10000"
+    volumes:
+      - name: app-jar
+        emptyDir:
+          sizeLimit: 250Mi
+      - name: gitlab-token
+        secret:
+          secretName: gitlab-token
+          items:
+            - key: token
+              path: token
     restartPolicy:
       type: OnFailure
       onFailureRetries: 2
