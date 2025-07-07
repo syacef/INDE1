@@ -14,7 +14,7 @@ spec:
     sparkVersion: "3.5.5"
     image: "spark:3.5.5"
     imagePullPolicy: IfNotPresent
-    mainClass: srvc_stats.MainHourly
+    mainClass: srvc_stats.Main
     mainApplicationFile: "local:///opt/spark/app/srvc-stats-assembly-0.1.1.jar"
     volumes:
       - name: app-jar
