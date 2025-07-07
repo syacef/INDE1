@@ -106,7 +106,7 @@
           "aggregation": "",
           "command": "ts.range",
           "filter": "parking-stats:timeseries:2025-07-03:entries",
-          "keyName": "parking-stats:timeseries:$day:revenue_simulation",
+          "keyName": "parking-events:daily:$day:timeseries:revenue_simulation",
           "legend": "",
           "query": "",
           "refId": "A",
@@ -311,8 +311,8 @@
     "list": [
       {
         "current": {
-          "text": "2025-07-03",
-          "value": "2025-07-03"
+          "text": "2025-07-06",
+          "value": "2025-07-06"
         },
         "description": "Correspond to a date and should be in the format yyyy-mm-dd",
         "hide": 1,
@@ -323,8 +323,8 @@
       },
       {
         "current": {
-          "text": "15",
-          "value": "15"
+          "text": "12",
+          "value": "12"
         },
         "description": "Correspond to a time of the day and should respect the following format : hh (like 12 for 12 p.m)",
         "name": "hour",
@@ -390,7 +390,7 @@
             "value": "11"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "12",
             "value": "12"
           },
@@ -405,7 +405,7 @@
             "value": "14"
           },
           {
-            "selected": true,
+            "selected": false,
             "text": "15",
             "value": "15"
           },
@@ -456,12 +456,12 @@
     ]
   },
   "time": {
-    "from": "2025-07-02T23:43:56.152Z",
-    "to": "2025-07-04T06:09:12.952Z"
+    "from": "2025-07-05T19:18:46.540Z",
+    "to": "2025-07-07T10:38:31.825Z"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Real Time",
   "uid": "cer4ykipfyqyod",
-  "version": 16
+  "version": 17
 }
