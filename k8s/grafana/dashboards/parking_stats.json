@@ -363,13 +363,10 @@
             "steps": [
               {
                 "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
-          }
+          },
+          "unit": "dtdurationms"
         },
         "overrides": []
       },
@@ -459,7 +456,7 @@
           "type": "timeSeries"
         }
       ],
-      "title": "Revenue Per Type Of Vehicules",
+      "title": "Average Stay Per Type Of Vehicule",
       "type": "timeseries"
     }
   ],
@@ -488,5 +485,5 @@
   "timezone": "browser",
   "title": "Parking Stats",
   "uid": "der56708s15vkf",
-  "version": 18
+  "version": 21
 }
