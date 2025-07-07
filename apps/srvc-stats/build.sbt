@@ -49,6 +49,7 @@ libraryDependencies ++= Seq(
   "io.minio" % "minio" % "8.5.7",
 
   "com.fasterxml.jackson.core" % "jackson-databind" % "2.15.2",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.15.2",
 
   "org.apache.commons" % "commons-compress" % "1.24.0",
 
