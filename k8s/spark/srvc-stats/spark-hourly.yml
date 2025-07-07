@@ -4,7 +4,11 @@ metadata:
   name: srvc-stats-hourly
   namespace: spark
 spec:
-  schedule: "@every 5m"  # Run hourly at midnight
+  schedule: "@every 5m"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
   volumes:
     - name: app-jar
       emptyDir:
@@ -15,9 +19,7 @@ spec:
         items:
           - key: token
             path: token
-  concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 3
-  failedJobsHistoryLimit: 3
+
   template:
     type: Scala
     mode: cluster
@@ -78,15 +80,6 @@ spec:
         - mountPath: /etc/gitlab-token
           name: gitlab-token
           readOnly: true
-      volumes:
-        - name: app-jar
-          emptyDir: {}
-        - name: gitlab-token
-          secret:
-            secretName: gitlab-token
-            items:
-              - key: token
-                path: token
     executor:
       instances: 3
       cores: 1
