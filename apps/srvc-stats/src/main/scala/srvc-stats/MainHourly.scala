@@ -1,0 +1,233 @@
+package srvc_stats
+
+import io.minio.{MinioClient, ListObjectsArgs, GetObjectArgs}
+import java.util.zip.GZIPInputStream
+import scala.io.Source
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import scala.jdk.CollectionConverters._
+import redis.clients.jedis.Jedis
+import redis.clients.jedis.Protocol
+import redis.clients.jedis.commands.ProtocolCommand
+import redis.clients.jedis.util.SafeEncoder
+import java.time.{LocalDateTime, ZoneOffset}
+import java.time.format.DateTimeFormatter
+import scala.util.{Try, Success, Failure}
+
+object Main extends App {
+
+  // val now = LocalDateTime.now(ZoneOffset.UTC)
+
+  // Set back the value above afterwards 
+  val now = LocalDateTime.of(2025, 7, 7, 13, 0)
+
+  // We compute the previous hour to get info
+  val previousHour = now.minusHours(1)
+  val year = previousHour.getYear.toString
+  val month = f"${previousHour.getMonthValue}%02d"
+  val day = f"${previousHour.getDayOfMonth}%02d"
+  val hour = f"${previousHour.getHour}%02d"
+  val dateParam = s"$year-$month-$day"
+
+  val minioClient = MinioClient.builder()
+    .endpoint("http://localhost:9000")
+    .credentials("minio", "minio123")
+    .build()
+
+  val redis = new Jedis("localhost", 6379)
+
+  val bucketName = "parking-events"
+  val prefix = s"topics/parking-event-topic/$year/$month/$day/$hour/"
+  
+  println(s"Processing data for: $dateParam at hour $hour")
+
+  case class ParkingEvent(
+    parkingSpotId: String,
+    parkingLotId: String,
+    isSlotHandicapped: Boolean,
+    duration: Long,
+    eventType: String,
+    timestamp: String,
+    licensePlate: String,
+    color: String,
+    vehicleType: String
+  )
+
+  case class AggregatedStats(
+    date: String,
+    hour: String,
+    nbrEntries: Int,
+    nbrExit: Int,
+    occupancy: Map[String, Int],
+    revenueSimulation: Double,
+    vehicleTypes: Map[String, Int]
+  )
+
+  object JsonSetCommand extends ProtocolCommand {
+    override def getRaw: Array[Byte] = SafeEncoder.encode("JSON.SET")
+  }
+
+  def parseJsonToParkingEvent(jsonNode: JsonNode): Option[ParkingEvent] = {
+    Option(jsonNode.get("parking"))
+      .flatMap(parking => Option(jsonNode.get("vehicle"))
+        .map(vehicle => ParkingEvent(
+          parkingSpotId = parking.get("parkingSpotId").asText(),
+          parkingLotId = parking.get("parkingLotId").asText(),
+          isSlotHandicapped = parking.get("isSlotHandicapped").asBoolean(),
+          duration = jsonNode.get("duration").asLong(),
+          eventType = jsonNode.get("eventType").asText(),
+          timestamp = jsonNode.get("timestamp").asText(),
+          licensePlate = vehicle.get("licensePlate").asText(),
+          color = vehicle.get("color").asText(),
+          vehicleType = vehicle.get("vehicleType").asText()
+        ))
+      )
+  }
+
+  def calculateOccupancy(events: List[ParkingEvent]): Map[String, Int] = {
+    val entriesByLot = events
+      .filter(_.eventType == "PARKING_ENTRY")
+      .groupBy(_.parkingLotId)
+      .view.mapValues(_.length).toMap
+    
+    val exitsByLot = events
+      .filter(_.eventType == "PARKING_EXIT")
+      .groupBy(_.parkingLotId)
+      .view.mapValues(_.length).toMap
+    
+    val allLots = entriesByLot.keySet ++ exitsByLot.keySet
+    
+    allLots.map { lot =>
+      val entries = entriesByLot.getOrElse(lot, 0)
+      val exits = exitsByLot.getOrElse(lot, 0)
+      lot -> math.max(0, entries - exits)
+    }.toMap
+  }
+
+  def calculateRevenueSimulation(occupancy: Map[String, Int], revenuePerHour: Double = 2.0): Double = {
+    val totalOccupiedSpots = occupancy.values.sum
+    totalOccupiedSpots * revenuePerHour
+  }
+
+  def aggregateEvents(events: List[ParkingEvent]): AggregatedStats = {
+    val entriesCount = events.count(_.eventType == "PARKING_ENTRY")
+    val exitsCount = events.count(_.eventType == "PARKING_EXIT")
+    
+    val occupancy = calculateOccupancy(events)
+    
+    val vehicleTypeCounts = events
+      .groupBy(_.vehicleType)
+      .view.mapValues(_.length).toMap
+    
+    val revenueSimulation = calculateRevenueSimulation(occupancy)
+    
+    AggregatedStats(
+      date = dateParam,
+      hour = hour,
+      nbrEntries = entriesCount,
+      nbrExit = exitsCount,
+      occupancy = occupancy,
+      revenueSimulation = revenueSimulation,
+      vehicleTypes = vehicleTypeCounts
+    )
+  }
+
+  def statsToJson(stats: AggregatedStats): String = {
+    val occupancyJson = stats.occupancy.map { case (k, v) => s""""$k": $v""" }.mkString("{", ", ", "}")
+    val vehicleTypesJson = stats.vehicleTypes.map { case (k, v) => s""""$k": $v""" }.mkString("{", ", ", "}")
+    
+    s"""{
+      "date": "${stats.date}",
+      "hour": "${stats.hour}",
+      "NbrEntries": ${stats.nbrEntries},
+      "NbrExit": ${stats.nbrExit},
+      "Occupancy": $occupancyJson,
+      "RevenueSimulation": ${stats.revenueSimulation},
+      "VehicleTypes": $vehicleTypesJson
+    }"""
+  }
+
+  def processFile(objectPath: String, mapper: ObjectMapper): List[ParkingEvent] = {
+    println(s"Processing file: $objectPath")
+    
+    val result = for {
+      stream <- Try(minioClient.getObject(
+        GetObjectArgs.builder()
+          .bucket(bucketName)
+          .`object`(objectPath)
+          .build()
+      ))
+      gzipStream <- Try(new GZIPInputStream(stream))
+      jsonLines <- Try(Source.fromInputStream(gzipStream).getLines().toList)
+    } yield {
+      jsonLines.flatMap { line =>
+        if (line.trim.nonEmpty) {
+          Try(mapper.readTree(line)) match {
+            case Success(jsonNode) => parseJsonToParkingEvent(jsonNode)
+            case Failure(e) =>
+              println(s"Error parsing line: ${e.getMessage}")
+              None
+          }
+        } else {
+          None
+        }
+      }
+    }
+    
+    result match {
+      case Success(events) => events
+      case Failure(e) =>
+        println(s"Failed to process $objectPath: ${e.getMessage}")
+        List.empty[ParkingEvent]
+    }
+  }
+
+  def getGzippedFiles(): List[String] = {
+    val objects = minioClient.listObjects(
+      ListObjectsArgs.builder()
+        .bucket(bucketName)
+        .prefix(prefix)
+        .recursive(true)
+        .build()
+    )
+
+    objects.iterator().asScala
+      .map(_.get())
+      .filterNot(_.isDir)
+      .map(_.objectName())
+      .filter(_.endsWith(".json.gz"))
+      .toList
+  }
+
+  def uploadToRedis(aggregatedStats: AggregatedStats, redisKey: String): Unit = {
+    val statsJson = statsToJson(aggregatedStats)
+    
+    Try(redis.sendCommand(JsonSetCommand, redisKey, ".", statsJson)) match {
+      case Success(_) =>
+        println(s"Uploaded aggregated stats to Redis with key: $redisKey")
+        println(s"Stats: ${statsJson}")
+      case Failure(e) =>
+        println(s"Failed to upload to Redis: ${e.getMessage}")
+    }
+  }
+
+  def processData(): Unit = {
+    val gzippedFiles = getGzippedFiles()
+    val mapper = new ObjectMapper()
+    
+    val allEvents = gzippedFiles.flatMap(processFile(_, mapper))
+    
+    println(s"Total events parsed: ${allEvents.length}")
+    println(s"Total files processed: ${gzippedFiles.length}")
+
+    if (allEvents.nonEmpty) {
+      val aggregatedStats = aggregateEvents(allEvents)
+      val redisKey = s"parking-stats:hourly:$dateParam:$hour"
+      uploadToRedis(aggregatedStats, redisKey)
+    } else {
+      println("No events found to aggregate")
+    }
+  }
+
+  processData()
+  redis.close()
+}
