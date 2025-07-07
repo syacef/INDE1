@@ -66,7 +66,7 @@ spec:
             - mountPath: /etc/gitlab-token
               name: gitlab-token
               readOnly: true
-      cores: 1
+      cores: 0.5
       memory: "512m"
       serviceAccount: spark-operator-spark
       labels:
@@ -80,7 +80,7 @@ spec:
           readOnly: true
     executor:
       instances: 1
-      cores: 1
+      cores: 0.5
       memory: "512m"
       labels:
         app: srvc-stats
