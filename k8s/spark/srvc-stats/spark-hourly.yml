@@ -5,6 +5,16 @@ metadata:
   namespace: spark
 spec:
   schedule: "@every 5m"  # Run hourly at midnight
+  volumes:
+    - name: app-jar
+      emptyDir:
+        sizeLimit: 250Mi
+    - name: gitlab-token
+      secret:
+        secretName: gitlab-token
+        items:
+          - key: token
+            path: token
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
