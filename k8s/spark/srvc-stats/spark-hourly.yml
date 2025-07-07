@@ -66,7 +66,7 @@ spec:
               readOnly: true
       cores: 1
       coreLimit: 1000m
-      coreRequest: 1
+      coreRequest: 1000m
       memory: "512Mi"
       serviceAccount: spark-operator-spark
       labels:
@@ -82,7 +82,7 @@ spec:
       instances: 1
       cores: 1
       coreLimit: 1000m
-      coreRequest: 1
+      coreRequest: 1000m
       memory: "512Mi"
       labels:
         app: srvc-stats
