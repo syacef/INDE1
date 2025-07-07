@@ -33,11 +33,11 @@ spec:
           imagePullPolicy: IfNotPresent
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "256Mi"
+              cpu: "125m"
             limits:
-              memory: "1Gi"
-              cpu: "1"
+              memory: "512Mi"
+              cpu: "250m"
           envFrom:
             - configMapRef:
                 name: apps-config
