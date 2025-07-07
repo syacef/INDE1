@@ -65,7 +65,9 @@ spec:
               name: gitlab-token
               readOnly: true
       cores: 1
-      coreLimit: "1000m"
+      cores: 1
+      coreLimit: 1
+      coreRequest: 1
       memory: "512Mi"
       serviceAccount: spark-operator-spark
       labels:
@@ -80,7 +82,8 @@ spec:
     executor:
       instances: 1
       cores: 1
-      coreLimit: "1000m"
+      coreLimit: 1
+      coreRequest: 1
       memory: "512Mi"
       labels:
         app: srvc-stats
