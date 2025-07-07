@@ -4,6 +4,7 @@ import io.minio.{MinioClient, ListObjectsArgs, GetObjectArgs}
 import java.util.zip.GZIPInputStream
 import scala.io.Source
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import scala.jdk.CollectionConverters._
 import redis.clients.jedis.Jedis
 import redis.clients.jedis.Protocol
@@ -12,10 +13,14 @@ import redis.clients.jedis.util.SafeEncoder
 import java.time.{LocalDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
 import scala.util.matching.Regex
+import scala.util.{Try, Success, Failure}
 
 object MainWeekly extends App {
 
-  val now = LocalDateTime.of(2025, 7, 8, 1, 0)
+  val now = LocalDateTime.now(ZoneOffset.UTC)
+
+  // To test
+  // val now = LocalDateTime.of(2025, 7, 8, 1, 0)
 
   val endDate = now.minusDays(1)
   val startDate = endDate.minusDays(6)
@@ -48,12 +53,13 @@ object MainWeekly extends App {
   )
 
   val mapper = new ObjectMapper()
+  mapper.registerModule(DefaultScalaModule)
 
   def parseJsonToParkingEvent(jsonNode: JsonNode): Option[ParkingEvent] = {
-    try {
+    Try {
       val parking = jsonNode.get("parking")
       val vehicle = jsonNode.get("vehicle")
-      Some(ParkingEvent(
+      ParkingEvent(
         parkingSpotId = parking.get("parkingSpotId").asText(),
         parkingLotId = parking.get("parkingLotId").asText(),
         isSlotHandicapped = parking.get("isSlotHandicapped").asBoolean(),
@@ -63,10 +69,8 @@ object MainWeekly extends App {
         licensePlate = vehicle.get("licensePlate").asText(),
         color = vehicle.get("color").asText(),
         vehicleType = vehicle.get("vehicleType").asText()
-      ))
-    } catch {
-      case _: Exception => None
-    }
+      )
+    }.toOption
   }
 
   def extractTimestampFromPath(path: String): Option[Long] = {
@@ -74,7 +78,7 @@ object MainWeekly extends App {
     
     path match {
       case pathPattern(year, month, day, hour, minute) =>
-        try {
+        Try {
           val dateTime = LocalDateTime.of(
             year.toInt, 
             month.toInt, 
@@ -82,31 +86,25 @@ object MainWeekly extends App {
             hour.toInt, 
             minute.toInt
           )
-          Some(dateTime.toEpochSecond(ZoneOffset.UTC))
-        } catch {
-          case _: Exception => None
-        }
+          dateTime.toEpochSecond(ZoneOffset.UTC)
+        }.toOption
       case _ => None
     }
   }
 
   def extractDateHour(timestamp: String): String = {
-    try {
+    Try {
       val dateTime = LocalDateTime.parse(timestamp.replace("Z", ""))
       f"${dateTime.getYear}-${dateTime.getMonthValue}%02d-${dateTime.getDayOfMonth}%02d-${dateTime.getHour}%02d"
-    } catch {
-      case _: Exception => timestamp.take(13)
-    }
+    }.getOrElse(timestamp.take(13))
   }
 
   def dateHourToEpochSeconds(dateHour: String): Long = {
-    try {
+    Try {
       val Array(year, month, day, hour) = dateHour.split("-")
       LocalDateTime.of(year.toInt, month.toInt, day.toInt, hour.toInt, 0)
         .toEpochSecond(ZoneOffset.UTC)
-    } catch {
-      case _: Exception => 0L
-    }
+    }.getOrElse(0L)
   }
 
   def calculateParkingDurations(events: List[ParkingEvent]): List[ParkingEvent] = {
@@ -141,7 +139,7 @@ object MainWeekly extends App {
   }
 
   val allGzippedFilesWithTimestamps: List[(String, Long)] = prefixes.flatMap { prefix =>
-    try {
+    Try {
       val objects = minioClient.listObjects(
         ListObjectsArgs.builder()
           .bucket(bucketName)
@@ -158,13 +156,11 @@ object MainWeekly extends App {
           extractTimestampFromPath(objectPath).map(timestamp => (objectPath, timestamp))
         }
         .toList
-    } catch {
-      case _: Exception => List.empty[(String, Long)]
-    }
+    }.getOrElse(List.empty[(String, Long)])
   }
 
   val allEventsWithDirTimestamps: List[EventWithDirectoryTime] = allGzippedFilesWithTimestamps.flatMap { case (objectPath, dirTimestamp) =>
-    try {
+    Try {
       val stream = minioClient.getObject(
         GetObjectArgs.builder()
           .bucket(bucketName)
@@ -175,19 +171,15 @@ object MainWeekly extends App {
       val jsonLines = Source.fromInputStream(gzipStream).getLines().toList
       jsonLines.flatMap { line =>
         if (line.trim.nonEmpty) {
-          try {
+          Try {
             val jsonNode = mapper.readTree(line)
             parseJsonToParkingEvent(jsonNode).map(event => 
               EventWithDirectoryTime(event, dirTimestamp)
             )
-          } catch {
-            case _: Exception => None
-          }
+          }.toOption.flatten
         } else None
       }
-    } catch {
-      case _: Exception => List.empty[EventWithDirectoryTime]
-    }
+    }.getOrElse(List.empty[EventWithDirectoryTime])
   }
 
   val allEvents = allEventsWithDirTimestamps.map(_.event)
@@ -261,14 +253,12 @@ object MainWeekly extends App {
   }
 
   def createAndPopulateTimeseries(key: String, data: List[(Long, Double)]): Unit = {
-    
-      data.foreach { case (timestamp, value) =>
-      try {
+    data.foreach { case (timestamp, value) =>
+      Try {
         val timestampMs = timestamp * 1000
         redis.sendCommand(TSAddCommand, key, timestampMs.toString, value.toString)
-      } catch {
-        case e: Exception => 
-          println(s"Error adding data point to $key at ${timestamp * 1000}: ${e.getMessage}")
+      }.recover { case e: Exception => 
+        println(s"Error adding data point to $key at ${timestamp * 1000}: ${e.getMessage}")
       }
     }
   }
@@ -322,9 +312,6 @@ object MainWeekly extends App {
     .view
     .mapValues(events => events.map(ev => calculateRevenue(ev.duration)).sum)
     .toMap
-
-  import com.fasterxml.jackson.module.scala.DefaultScalaModule
-  mapper.registerModule(DefaultScalaModule)
 
   val revenueByVehicleTypeJson = mapper.writeValueAsString(revenueByVehicleType)
   val revenueByVehicleTypeKey = s"parking-stats:weekly:$weekParam:revenue-by-type"

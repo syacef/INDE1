@@ -1,6 +1,6 @@
 package srvc_stats
 
-import io.minio.{MinioClient, ListObjectsArgs, GetObjectArgs, PutObjectArgs}
+import io.minio.{MinioClient, ListObjectsArgs, GetObjectArgs}
 import java.util.zip.GZIPInputStream
 import scala.io.Source
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
@@ -18,10 +18,10 @@ import java.time.Instant
 
 object MainDaily extends App {
 
-  // val now = LocalDateTime.now(ZoneOffset.UTC)
+  val now = LocalDateTime.now(ZoneOffset.UTC)
 
-  // Set back the value above afterwards 
-  val now = LocalDateTime.of(2025, 7, 4, 1, 0)
+  // For tests 
+  // val now = LocalDateTime.of(2025, 7, 7, 0, 0)
 
   // We compute the previous day to get info
   val previousDay = now.minusDays(1)
@@ -38,7 +38,6 @@ object MainDaily extends App {
   val redis = new Jedis("localhost", 6379)
 
   val bucketName = "parking-events"
-  val timeSeriesBucket = "parking-timeseries"
   val prefix = s"topics/parking-event-topic/$year/$month/$day/"
   
   println(s"Processing data for the entire day: $dateParam")
@@ -235,15 +234,6 @@ object MainDaily extends App {
     }"""
   }
 
-  def timeSeriesDataToCsv(timeSeriesData: TimeSeriesData): String = {
-    val header = "timestamp,value\n"
-    val rows = timeSeriesData.dataPoints.map { point =>
-      s"${point.timestamp},${point.value}"
-    }.mkString("\n")
-    
-    header + rows
-  }
-
   def readEventsFromFile(objectPath: String, mapper: ObjectMapper): List[ParkingEvent] = {
     Try {
       val stream = minioClient.getObject(
@@ -266,10 +256,9 @@ object MainDaily extends App {
           None
         }
       }
-    }.recover {
-      case e: Exception =>
-        println(s"Failed to process $objectPath: ${e.getMessage}")
-        List.empty[ParkingEvent]
+    }.recover { case e: Exception =>
+      println(s"Failed to process $objectPath: ${e.getMessage}")
+      List.empty[ParkingEvent]
     }.getOrElse(List.empty)
   }
 
@@ -298,53 +287,30 @@ object MainDaily extends App {
   }
 
   def createTimeSeriesCommands(timeSeriesData: TimeSeriesData, dateParam: String): List[Try[Unit]] = {
-    val redisKey = s"parking-stats:timeseries:$dateParam:${timeSeriesData.attribute}"
+    val redisKey = s"parking-events:daily:$dateParam:timeseries:${timeSeriesData.attribute}"
     
     val createCommand: Try[Unit] = Try {
-      try {
-        redis.sendCommand(TSCreateCommand, redisKey, "RETENTION", "0")
-        println(s"Created time series for attribute '${timeSeriesData.attribute}' with key: $redisKey")
-        ()
-      } catch {
-        case _: Exception => 
-          ()
-      }
+      redis.sendCommand(TSCreateCommand, redisKey, "RETENTION", "0")
+      println(s"Created time series for attribute '${timeSeriesData.attribute}' with key: $redisKey")
+    }.recover { case _: Exception => 
+      // Key might already exist, ignore
+      ()
     }
     
     val addCommands: List[Try[Unit]] = timeSeriesData.dataPoints.map { point =>
       Try {
         val unixTimestamp = timestampToUnixMillis(point.timestamp)
         redis.sendCommand(TSAddCommand, redisKey, unixTimestamp.toString, point.value.toString)
-        ()
       }
     }
     
     createCommand :: addCommands
   }
 
-  def createMinioUploadOperation(timeSeriesData: TimeSeriesData, dateParam: String): Try[Unit] = {
-    Try {
-      val csvContent = timeSeriesDataToCsv(timeSeriesData)
-      val fileName = s"timeseries/$dateParam/${timeSeriesData.attribute}.csv"
-      val inputStream = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8))
-      
-      minioClient.putObject(
-        PutObjectArgs.builder()
-          .bucket(timeSeriesBucket)
-          .`object`(fileName)
-          .stream(inputStream, csvContent.length, -1)
-          .contentType("text/csv")
-          .build()
-      )
-      
-      println(s"Uploaded time series CSV for attribute '${timeSeriesData.attribute}' to MinIO: $fileName")
-    }
-  }
-
   def createDailyStatsOperation(aggregatedStats: AggregatedStats): Try[Unit] = {
     Try {
       val statsJson = statsToJson(aggregatedStats)
-      val redisKey = s"parking-stats:daily:$dateParam"
+      val redisKey = s"parking-events:daily:$dateParam"
       
       redis.sendCommand(JsonSetCommand, redisKey, ".", statsJson)
       println(s"Uploaded aggregated daily stats to Redis with key: $redisKey")
@@ -353,15 +319,14 @@ object MainDaily extends App {
   }
 
   def executeOperations[T](operations: List[Try[T]], operationType: String): Unit = {
-    val results = operations.partition(_.isSuccess)
-    val successCount = results._1.length
-    val failureCount = results._2.length
+    val (successes, failures) = operations.partition(_.isSuccess)
+    val successCount = successes.length
+    val failureCount = failures.length
     
     if (failureCount > 0) {
       println(s"$operationType: $successCount successful, $failureCount failed")
-      results._2.foreach {
-        case Failure(exception) => println(s"  Error: ${exception.getMessage}")
-        case _ => // Should not happen
+      failures.collect { case Failure(exception) => 
+        println(s"  Error: ${exception.getMessage}")
       }
     } else {
       println(s"$operationType: All $successCount operations successful")
@@ -380,66 +345,70 @@ object MainDaily extends App {
     override def getRaw: Array[Byte] = SafeEncoder.encode("TS.ADD")
   }
 
-  try {
-    val objects = minioClient.listObjects(
-      ListObjectsArgs.builder()
-        .bucket(bucketName)
-        .prefix(prefix)
-        .recursive(true)
-        .build()
+  def processFiles(): Unit = {
+    val objectsResult = Try {
+      minioClient.listObjects(
+        ListObjectsArgs.builder()
+          .bucket(bucketName)
+          .prefix(prefix)
+          .recursive(true)
+          .build()
+      )
+    }
+
+    objectsResult.fold(
+      exception => println(s"Failed to list objects: ${exception.getMessage}"),
+      objects => {
+        val gzippedFiles = objects.iterator().asScala
+          .map(_.get())
+          .filterNot(_.isDir)
+          .map(_.objectName())
+          .filter(_.endsWith(".json.gz"))
+          .toList
+
+        val mapper = new ObjectMapper()
+
+        val filesWithTimestamps = gzippedFiles.flatMap { objectPath =>
+          extractTimestampFromPath(objectPath).map { timestamp =>
+            FileWithTimestamp(objectPath, timestamp)
+          }
+        }
+
+        println(s"Total files with timestamps: ${filesWithTimestamps.length}")
+
+        if (filesWithTimestamps.nonEmpty) {
+          val eventsGroupedByTimestamp = groupEventsByTimestamp(filesWithTimestamps, mapper)
+          
+          val allEvents = eventsGroupedByTimestamp.values.flatten.toList
+          
+          println(s"Total events parsed: ${allEvents.length}")
+
+          if (allEvents.nonEmpty) {
+            val aggregatedStats = aggregateEvents(allEvents)
+            
+            val timeSeriesDataList = createTimeSeriesData(eventsGroupedByTimestamp, allEvents)
+            
+            val dailyStatsOperation = createDailyStatsOperation(aggregatedStats)
+            executeOperations(List(dailyStatsOperation), "Daily stats storage")
+            
+            val redisTimeSeriesOperations = timeSeriesDataList.flatMap(createTimeSeriesCommands(_, dateParam))
+            executeOperations(redisTimeSeriesOperations, "Redis Time Series operations")
+            
+            println(s"Total files processed: ${gzippedFiles.length}")
+            println(s"Total time series attributes: ${timeSeriesDataList.length}")
+            
+            println(s"Final occupancy by lot: ${aggregatedStats.occupancy}")
+            
+          } else {
+            println("No events found to aggregate")
+          }
+        } else {
+          println("No files with valid timestamps found")
+        }
+      }
     )
-
-    val gzippedFiles = objects.iterator().asScala
-      .map(_.get())
-      .filterNot(_.isDir)
-      .map(_.objectName())
-      .filter(_.endsWith(".json.gz"))
-      .toList
-
-    val mapper = new ObjectMapper()
-
-    val filesWithTimestamps = gzippedFiles.flatMap { objectPath =>
-      extractTimestampFromPath(objectPath).map { timestamp =>
-        FileWithTimestamp(objectPath, timestamp)
-      }
-    }
-
-    println(s"Total files with timestamps: ${filesWithTimestamps.length}")
-
-    if (filesWithTimestamps.nonEmpty) {
-      val eventsGroupedByTimestamp = groupEventsByTimestamp(filesWithTimestamps, mapper)
-      
-      val allEvents = eventsGroupedByTimestamp.values.flatten.toList
-      
-      println(s"Total events parsed: ${allEvents.length}")
-
-      if (allEvents.nonEmpty) {
-        val aggregatedStats = aggregateEvents(allEvents)
-        
-        val timeSeriesDataList = createTimeSeriesData(eventsGroupedByTimestamp, allEvents)
-        
-        val dailyStatsOperation = createDailyStatsOperation(aggregatedStats)
-        executeOperations(List(dailyStatsOperation), "Daily stats storage")
-        
-        val minioOperations = timeSeriesDataList.map(createMinioUploadOperation(_, dateParam))
-        executeOperations(minioOperations, "MinIO CSV uploads")
-        
-        val redisTimeSeriesOperations = timeSeriesDataList.flatMap(createTimeSeriesCommands(_, dateParam))
-        executeOperations(redisTimeSeriesOperations, "Redis Time Series operations")
-        
-        println(s"Total files processed: ${gzippedFiles.length}")
-        println(s"Total time series attributes: ${timeSeriesDataList.length}")
-        
-        println(s"Final occupancy by lot: ${aggregatedStats.occupancy}")
-        
-      } else {
-        println("No events found to aggregate")
-      }
-    } else {
-      println("No files with valid timestamps found")
-    }
-    
-  } finally {
-    redis.close()
   }
+
+  processFiles()
+  redis.close()
 }

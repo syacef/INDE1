@@ -11,13 +11,14 @@ import redis.clients.jedis.commands.ProtocolCommand
 import redis.clients.jedis.util.SafeEncoder
 import java.time.{LocalDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
+import scala.util.{Try, Success, Failure}
 
 object Main extends App {
 
   // val now = LocalDateTime.now(ZoneOffset.UTC)
 
   // Set back the value above afterwards 
-  val now = LocalDateTime.of(2025, 7, 3, 16, 0)
+  val now = LocalDateTime.of(2025, 7, 7, 13, 0)
 
   // We compute the previous hour to get info
   val previousHour = now.minusHours(1)
@@ -38,24 +39,6 @@ object Main extends App {
   val prefix = s"topics/parking-event-topic/$year/$month/$day/$hour/"
   
   println(s"Processing data for: $dateParam at hour $hour")
-  
-  // Get the different JSONs for the hour
-  val objects = minioClient.listObjects(
-    ListObjectsArgs.builder()
-      .bucket(bucketName)
-      .prefix(prefix)
-      .recursive(true)
-      .build()
-  )
-
-  val gzippedFiles = objects.iterator().asScala
-    .map(_.get())
-    .filterNot(_.isDir)
-    .map(_.objectName())
-    .filter(_.endsWith(".json.gz"))
-    .toList
-
-  val mapper = new ObjectMapper()
 
   case class ParkingEvent(
     parkingSpotId: String,
@@ -79,39 +62,39 @@ object Main extends App {
     vehicleTypes: Map[String, Int]
   )
 
+  object JsonSetCommand extends ProtocolCommand {
+    override def getRaw: Array[Byte] = SafeEncoder.encode("JSON.SET")
+  }
+
   def parseJsonToParkingEvent(jsonNode: JsonNode): Option[ParkingEvent] = {
-    try {
-      val parking = jsonNode.get("parking")
-      val vehicle = jsonNode.get("vehicle")
-      
-      Some(ParkingEvent(
-        parkingSpotId = parking.get("parkingSpotId").asText(),
-        parkingLotId = parking.get("parkingLotId").asText(),
-        isSlotHandicapped = parking.get("isSlotHandicapped").asBoolean(),
-        duration = jsonNode.get("duration").asLong(),
-        eventType = jsonNode.get("eventType").asText(),
-        timestamp = jsonNode.get("timestamp").asText(),
-        licensePlate = vehicle.get("licensePlate").asText(),
-        color = vehicle.get("color").asText(),
-        vehicleType = vehicle.get("vehicleType").asText()
-      ))
-    } catch {
-      case _: Exception => None
-    }
+    Option(jsonNode.get("parking"))
+      .flatMap(parking => Option(jsonNode.get("vehicle"))
+        .map(vehicle => ParkingEvent(
+          parkingSpotId = parking.get("parkingSpotId").asText(),
+          parkingLotId = parking.get("parkingLotId").asText(),
+          isSlotHandicapped = parking.get("isSlotHandicapped").asBoolean(),
+          duration = jsonNode.get("duration").asLong(),
+          eventType = jsonNode.get("eventType").asText(),
+          timestamp = jsonNode.get("timestamp").asText(),
+          licensePlate = vehicle.get("licensePlate").asText(),
+          color = vehicle.get("color").asText(),
+          vehicleType = vehicle.get("vehicleType").asText()
+        ))
+      )
   }
 
   def calculateOccupancy(events: List[ParkingEvent]): Map[String, Int] = {
     val entriesByLot = events
       .filter(_.eventType == "PARKING_ENTRY")
       .groupBy(_.parkingLotId)
-      .map { case (lotId, entries) => lotId -> entries.length }
+      .view.mapValues(_.length).toMap
     
     val exitsByLot = events
       .filter(_.eventType == "PARKING_EXIT")
       .groupBy(_.parkingLotId)
-      .map { case (lotId, exits) => lotId -> exits.length }
+      .view.mapValues(_.length).toMap
     
-    val allLots = (entriesByLot.keySet ++ exitsByLot.keySet).toList
+    val allLots = entriesByLot.keySet ++ exitsByLot.keySet
     
     allLots.map { lot =>
       val entries = entriesByLot.getOrElse(lot, 0)
@@ -133,7 +116,7 @@ object Main extends App {
     
     val vehicleTypeCounts = events
       .groupBy(_.vehicleType)
-      .map { case (vehicleType, eventList) => vehicleType -> eventList.length }
+      .view.mapValues(_.length).toMap
     
     val revenueSimulation = calculateRevenueSimulation(occupancy)
     
@@ -163,69 +146,88 @@ object Main extends App {
     }"""
   }
 
-  object JsonSetCommand extends ProtocolCommand {
-    override def getRaw: Array[Byte] = SafeEncoder.encode("JSON.SET")
-  }
-
-  try {
-    val allEvents = gzippedFiles.flatMap { objectPath =>
-      println(s"Processing file: $objectPath")
-      try {
-        val stream = minioClient.getObject(
-          GetObjectArgs.builder()
-            .bucket(bucketName)
-            .`object`(objectPath)
-            .build()
-        )
-
-        val gzipStream = new GZIPInputStream(stream)
-        val jsonLines = Source.fromInputStream(gzipStream).getLines().toList
-
-        jsonLines.flatMap { line =>
-          if (line.trim.nonEmpty) {
-            try {
-              val jsonNode = mapper.readTree(line)
-              parseJsonToParkingEvent(jsonNode)
-            } catch {
-              case e: Exception =>
-                println(s"Error parsing line: ${e.getMessage}")
-                None
-            }
-          } else {
-            None
+  def processFile(objectPath: String, mapper: ObjectMapper): List[ParkingEvent] = {
+    println(s"Processing file: $objectPath")
+    
+    val result = for {
+      stream <- Try(minioClient.getObject(
+        GetObjectArgs.builder()
+          .bucket(bucketName)
+          .`object`(objectPath)
+          .build()
+      ))
+      gzipStream <- Try(new GZIPInputStream(stream))
+      jsonLines <- Try(Source.fromInputStream(gzipStream).getLines().toList)
+    } yield {
+      jsonLines.flatMap { line =>
+        if (line.trim.nonEmpty) {
+          Try(mapper.readTree(line)) match {
+            case Success(jsonNode) => parseJsonToParkingEvent(jsonNode)
+            case Failure(e) =>
+              println(s"Error parsing line: ${e.getMessage}")
+              None
           }
+        } else {
+          None
         }
-      } catch {
-        case e: Exception =>
-          println(s"Failed to process $objectPath: ${e.getMessage}")
-          List.empty[ParkingEvent]
       }
     }
+    
+    result match {
+      case Success(events) => events
+      case Failure(e) =>
+        println(s"Failed to process $objectPath: ${e.getMessage}")
+        List.empty[ParkingEvent]
+    }
+  }
 
+  def getGzippedFiles(): List[String] = {
+    val objects = minioClient.listObjects(
+      ListObjectsArgs.builder()
+        .bucket(bucketName)
+        .prefix(prefix)
+        .recursive(true)
+        .build()
+    )
+
+    objects.iterator().asScala
+      .map(_.get())
+      .filterNot(_.isDir)
+      .map(_.objectName())
+      .filter(_.endsWith(".json.gz"))
+      .toList
+  }
+
+  def uploadToRedis(aggregatedStats: AggregatedStats, redisKey: String): Unit = {
+    val statsJson = statsToJson(aggregatedStats)
+    
+    Try(redis.sendCommand(JsonSetCommand, redisKey, ".", statsJson)) match {
+      case Success(_) =>
+        println(s"Uploaded aggregated stats to Redis with key: $redisKey")
+        println(s"Stats: ${statsJson}")
+      case Failure(e) =>
+        println(s"Failed to upload to Redis: ${e.getMessage}")
+    }
+  }
+
+  def processData(): Unit = {
+    val gzippedFiles = getGzippedFiles()
+    val mapper = new ObjectMapper()
+    
+    val allEvents = gzippedFiles.flatMap(processFile(_, mapper))
+    
     println(s"Total events parsed: ${allEvents.length}")
+    println(s"Total files processed: ${gzippedFiles.length}")
 
     if (allEvents.nonEmpty) {
       val aggregatedStats = aggregateEvents(allEvents)
-      val statsJson = statsToJson(aggregatedStats)
-      
       val redisKey = s"parking-stats:hourly:$dateParam:$hour"
-      
-      try {
-        redis.sendCommand(JsonSetCommand, redisKey, ".", statsJson)
-        
-        println(s"Uploaded aggregated stats to Redis with key: $redisKey")
-        println(s"Stats: ${statsJson}")
-        println(s"Total files processed: ${gzippedFiles.length}")
-        
-      } catch {
-        case e: Exception =>
-          println(s"Failed to upload to Redis: ${e.getMessage}")
-      }
+      uploadToRedis(aggregatedStats, redisKey)
     } else {
       println("No events found to aggregate")
     }
-    
-  } finally {
-    redis.close()
   }
+
+  processData()
+  redis.close()
 }
