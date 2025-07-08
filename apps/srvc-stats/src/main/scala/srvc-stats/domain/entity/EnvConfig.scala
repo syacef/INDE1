@@ -10,7 +10,7 @@ object EnvConfig {
   val redisPassword: String   = sys.env.getOrElse("REDIS_PASSWORD", "")
   val redisMasterName: String = sys.env.getOrElse("REDIS_MASTER_NAME", "mymaster")
 
-  val minioHost: String      = sys.env.getOrElse("S3_HOST", "localhost:9000")
+  val minioHost: String      = sys.env.getOrElse("MINIO_HOST", "http://localhost:9000")
   val minioAccessKey: String = sys.env.getOrElse("MINIO_ACCESS_KEY", "minio")
   val minioSecretKey: String = sys.env.getOrElse("MINIO_SECRET_KEY", "minio123")
   val minioBucket: String    = sys.env.getOrElse("MINIO_BUCKET", "parking-events")

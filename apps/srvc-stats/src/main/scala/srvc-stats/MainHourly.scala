@@ -5,7 +5,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.{ Dataset, SparkSession }
 import redis.clients.jedis.JedisSentinelPool
 import srvc_stats.domain.entity.{ AggregatedStatsSpark, EnvConfig, ParkingEventSpark }
-import srvc_stats.domain.service.RedisService
+import srvc_stats.domain.service.{ MinioService, RedisService }
 
 import java.time.{ LocalDateTime, ZoneOffset }
 
@@ -23,7 +23,7 @@ object MainHourly {
     (year, month, day, hour, dateParam, s"$year/$month/$day/$hour")
   }
 
-  def readParkingEvents(spark: SparkSession, s3Path: String): Dataset[ParkingEventSpark] = {
+  def readParkingEvents(spark: SparkSession, s3Path: String, minioService: MinioService): Dataset[ParkingEventSpark] = {
     import spark.implicits._
 
     val schema = StructType(
@@ -55,6 +55,10 @@ object MainHourly {
         StructField("timestamp", StringType, nullable = false)
       )
     )
+
+    val allFiles = minioService.listFiles(s3Path)
+
+    println(s"Found ${allFiles.length} files to process")
 
     val df = spark.read
       .schema(schema)
@@ -129,7 +133,7 @@ object MainHourly {
     totalOccupiedSpots * revenuePerHour
   }
 
-  def aggregateEventsEfficient(events: Dataset[ParkingEventSpark], date: String, hour: String): AggregatedStatsSpark = {
+  def aggregateEvents(events: Dataset[ParkingEventSpark], date: String, hour: String): AggregatedStatsSpark = {
     val totalEvents  = events.count()
     val entriesCount = events.filter(col("eventType") === "PARKING_ENTRY").count()
     val exitsCount   = events.filter(col("eventType") === "PARKING_EXIT").count()
@@ -183,35 +187,9 @@ object MainHourly {
     jedis.close()
   }
 
-  def processHourlyBatch(
-    spark: SparkSession,
-    s3Path: String,
-    date: String,
-    hour: String,
-    redisPool: JedisSentinelPool
-  ): Unit = {
-    println(s"Processing hourly batch for $date at hour $hour")
-    println(s"Reading from S3 path: $s3Path")
-
-    val events     = readParkingEvents(spark, s3Path)
-    val eventCount = events.count()
-
-    if (eventCount > 0) {
-      println(s"Found $eventCount events to process")
-
-      val aggregatedStats = aggregateEventsEfficient(events, date, hour)
-      val redisKey        = s"parking-stats:hourly:$date:$hour"
-
-      uploadToRedis(aggregatedStats, redisKey, redisPool)
-    } else {
-      println("No events found for processing")
-    }
-
-    events.unpersist()
-  }
-
   def main(args: Array[String]): Unit = {
     val redisPool: JedisSentinelPool = RedisService.createRedisPool()
+    val minioService: MinioService = new MinioService()
     val spark = SparkSession
       .builder()
       .appName("ParkingStatsHourly")
@@ -221,42 +199,58 @@ object MainHourly {
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .config("spark.sql.execution.arrow.pyspark.enabled", "true")
       .config("spark.sql.streaming.checkpointLocation", "/tmp/spark-checkpoints")
-      .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-      .config("spark.hadoop.fs.s3a.endpoint", EnvConfig.minioHost)
-      .config("spark.hadoop.fs.s3a.access.key", EnvConfig.minioAccessKey)
-      .config("spark.hadoop.fs.s3a.secret.key", EnvConfig.minioSecretKey)
-      .config("spark.hadoop.fs.s3a.path.style.access", "true")
-      .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
-      .config("spark.hadoop.fs.s3a.connection.timeout", "30000")
-      .config("spark.hadoop.fs.s3a.connection.establish.timeout", "30000")
-      .config("spark.hadoop.fs.s3a.connection.request.timeout", "30000")
-      .config("spark.hadoop.fs.s3a.socket.timeout", "30000")
-      .config("spark.hadoop.fs.s3a.attempts.maximum", "3")
-      .config("spark.hadoop.fs.s3a.retry.limit", "3")
-      .config("spark.hadoop.fs.s3a.retry.interval", "1000")
-      .config("spark.hadoop.fs.s3a.multipart.size", "134217728")
-      .config("spark.hadoop.fs.s3a.multipart.threshold", "134217728")
-      .config("spark.hadoop.fs.s3a.block.size", "67108864")
-      .config("spark.hadoop.fs.s3a.buffer.dir", "/tmp")
-      .config("spark.hadoop.fs.s3a.fast.upload", "true")
-      .config("spark.hadoop.fs.s3a.fast.upload.buffer", "disk")
-      .config("spark.hadoop.fs.s3a.fast.upload.active.blocks", "8")
+
+      /*
+      // S3N Configuration for MinIO (Native S3 implementation)
+      .config("spark.hadoop.fs.s3n.impl", "org.apache.hadoop.fs.s3native.NativeS3FileSystem")
+      .config("spark.hadoop.fs.s3n.awsAccessKeyId", "xxx")
+      .config("spark.hadoop.fs.s3n.awsSecretAccessKey", "xxx")
+      
+      // MinIO endpoint configuration for S3N
+      .config("spark.hadoop.fs.s3n.endpoint", "localhost:9000")
+      .config("spark.hadoop.fs.s3n.connection.ssl.enabled", "false")
+      .config("spark.hadoop.fs.s3n.path.style.access", "true")
+      
+      // S3N specific settings
+      .config("spark.hadoop.fs.s3n.multipart.uploads.enabled", "false")
+      .config("spark.hadoop.fs.s3n.multipart.uploads.block.size", "67108864")
+      .config("spark.hadoop.fs.s3n.buffer.dir", "/tmp")
+      
+      // Connection timeouts
+      .config("spark.hadoop.fs.s3n.connection.timeout", "30000")
+      .config("spark.hadoop.fs.s3n.socket.timeout", "30000")
+      .config("spark.hadoop.fs.s3n.connection.establish.timeout", "30000")
+      .config("spark.hadoop.fs.s3n.connection.request.timeout", "30000")
+      
+      // Retry settings
+      .config("spark.hadoop.fs.s3n.attempts.maximum", "3")
+      .config("spark.hadoop.fs.s3n.retry.limit", "3")
+      .config("spark.hadoop.fs.s3n.retry.interval", "1000")
+      */
       .getOrCreate()
 
-    try {
-      val (year, month, day, hour, dateParam, pathSuffix) = getDateTimeParams()
-      val s3Path = s"s3a://${EnvConfig.minioBucket}/${EnvConfig.minioPrefixPath}/$year/$month/5/$hour/*.json.gz"
+    val (year, month, day, hour, date, pathSuffix) = getDateTimeParams()
+    val s3Path = s"${EnvConfig.minioPrefixPath}/$year/$month/05/$hour/*.json.gz"
 
-      println(s"Starting Spark application for date: $dateParam, hour: $hour")
-      processHourlyBatch(spark, s3Path, dateParam, hour, redisPool)
+    println(s"Starting Spark application for date: $date, hour: $hour")
+    println(s"Reading from S3 path: $s3Path (bucket ${EnvConfig.minioBucket})")
 
-    } catch {
-      case e: Exception =>
-        println(s"Application failed: ${e.getMessage}")
-        e.printStackTrace()
-    } finally {
-      redisPool.close()
-      spark.stop()
+    val events     = readParkingEvents(spark, s3Path, minioService)
+    val eventCount = events.count()
+
+    if (eventCount > 0) {
+      println(s"Found $eventCount events to process")
+
+      val aggregatedStats = aggregateEvents(events, date, hour)
+      val redisKey        = s"parking-stats:hourly:$date:$hour"
+
+      uploadToRedis(aggregatedStats, redisKey, redisPool)
+    } else {
+      println("No events found for processing")
     }
+
+    events.unpersist()
+    redisPool.close()
+    spark.stop()
   }
 }
