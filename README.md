@@ -93,3 +93,4 @@ We provide a sample of good preset for our architecture.
 | Kafka | 1 | 1 | 1GB | 5GB | Single instance |
 | Redis | 3 | 0.5 | 512MB | 1GB | 3 node Cluster |
 | MinIO | 3 | 0.5 | 512MB | 20GB | Cluster |
+
