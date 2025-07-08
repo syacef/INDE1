@@ -1,6 +1,0 @@
-addSbtPlugin("nl.gn0s1s" % "sbt-dotenv" % "3.1.1")
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.3.1")
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.3")
-addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.0")
-addSbtPlugin("org.wartremover" % "sbt-wartremover" % "3.3.5")
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.3.1")
