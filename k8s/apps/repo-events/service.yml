@@ -1,0 +1,16 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: repo-events
+  namespace: apps
+  labels:
+    app: repo-events
+spec:
+    type: ClusterIP
+    selector:
+      app: repo-events
+    ports:
+      - protocol: TCP
+        port: 8080
+        targetPort: 8080

@@ -4,7 +4,7 @@ metadata:
   name: srvc-stats-hourly
   namespace: spark
 spec:
-  schedule: "0 * * * *"  # Run every hour at minute 0
+  schedule: "@every 1m"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -15,9 +15,17 @@ spec:
     image: "spark:3.5.5"
     imagePullPolicy: IfNotPresent
     mainClass: srvc_stats.Main
-    mainApplicationFile: "local:///opt/spark/app/target/scala-2.13/srvc-stats-assembly-0.1.0.jar"
-    arguments:
-      - "10000"
+    mainApplicationFile: "local:///opt/spark/app/srvc-stats-assembly-0.1.1.jar"
+    volumes:
+      - name: app-jar
+        emptyDir:
+          sizeLimit: 250Mi
+      - name: gitlab-token
+        secret:
+          secretName: gitlab-token
+          items:
+            - key: token
+              path: token
     restartPolicy:
       type: OnFailure
       onFailureRetries: 2
@@ -40,17 +48,16 @@ spec:
             - -c
           args:
             - |
-              curl -H "JOB-TOKEN: $(cat /etc/gitlab-token/token)" \
-                https://gitlab.cri.epita.fr/api/v4/projects/26539/packages/generic/srvc-stats/0.1.0/srvc-stats.0.1.0.tar.gz \
-                -o srvc-stats.0.1.0.tar.gz
-              tar -xzf srvc-stats.0.1.0.tar.gz -C /opt/spark/app
+              curl -H "PRIVATE-TOKEN: $(cat /etc/gitlab-token/token)" \
+                https://gitlab.cri.epita.fr/api/v4/projects/26539/packages/generic/srvc-stats/0.1.1/srvc-stats-assembly-0.1.1.jar \
+                -o /opt/spark/app/srvc-stats-assembly-0.1.1.jar
           resources:
             limits:
-              cpu: 50m
-              memory: 0.25Gi
+              cpu: 150m
+              memory: 256Mi
             requests:
-              cpu: 50m
-              memory: 0.25Gi
+              cpu: 150m
+              memory: 256Mi
           volumeMounts:
             - mountPath: /opt/spark/app
               name: app-jar
@@ -63,15 +70,12 @@ spec:
       labels:
         app: srvc-stats
         component: driver
-      volumes:
-        - name: app-jar
-          emptyDir: {}
-        - name: gitlab-token
-          secret:
-            secretName: gitlab-token
-            items:
-              - key: token
-                path: token
+      volumeMounts:
+        - mountPath: /opt/spark/app
+          name: app-jar
+        - mountPath: /etc/gitlab-token
+          name: gitlab-token
+          readOnly: true
     executor:
       instances: 1
       cores: 1

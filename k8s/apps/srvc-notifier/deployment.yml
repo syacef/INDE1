@@ -45,11 +45,11 @@ spec:
                 name: srvc-notifier-secrets
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "256Mi"
+              cpu: "125m"
             limits:
-              memory: "1Gi"
-              cpu: "1"
+              memory: "512Mi"
+              cpu: "250m"
           # livenessProbe:
           #   httpGet:
           #     path: /liveness

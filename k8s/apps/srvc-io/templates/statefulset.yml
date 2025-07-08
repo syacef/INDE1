@@ -48,11 +48,11 @@ spec:
           name: metrics
         resources:
           requests:
+            memory: "128Mi"
+            cpu: "125m"
+          limits:
             memory: "256Mi"
             cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
         env:
         - name: POD_INDEX
           valueFrom:

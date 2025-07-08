@@ -29,15 +29,15 @@ spec:
         - name: pull-secret
       containers:
         - name: srvc-alert
-          image: registry.cri.epita.fr/mateo.lelong/inde1/srvc-alert:v0.2.1
+          image: registry.cri.epita.fr/mateo.lelong/inde1/srvc-alert:v0.2.2
           imagePullPolicy: IfNotPresent
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "256Mi"
+              cpu: "125m"
             limits:
-              memory: "1Gi"
-              cpu: "1"
+              memory: "512Mi"
+              cpu: "250m"
           envFrom:
             - configMapRef:
                 name: apps-config
