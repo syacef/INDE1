@@ -56,9 +56,10 @@ The project is built with a microservices architecture including the following c
 Individual service tests can be run by navigating to the specific service directory and executing:
 
 ```bash
-cd apps/<service-name>
 docker compose up -d
+cd apps/<service-name>
 sbt test
+cd ../..
 docker compose down
 ```
 
